@@ -2794,7 +2794,7 @@ _sub('ordenes', 'ordenes', function(snap) {
 
     // Notificar al mesero cuando Firebase reporta transicion a lista
     if(rol === 'mesero' && nuevoStatus === 'lista' && statusAnterior !== null && statusAnterior !== 'lista') {
-      notif(mesaNum);
+      window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:mesaNum}}));
     }
 
     _prevFbStatus[mesaNum] = nuevoStatus;
@@ -3643,6 +3643,7 @@ function notif(m){
   setTimeout(function(){beep();},1000);
   setTimeout(function(){beep();},1500);
 }
+window.addEventListener('ordenLista', function(e){ notif(e.detail.mesa); });
 function cerrarNotifModal(){
   gi('notif-modal').classList.remove('on');
 }
