@@ -7506,15 +7506,6 @@ function checkPin(rol, pin){ return _PINS[rol] === pin; }
 
 document.addEventListener('click',function(){try{getAC().resume();}catch(e){}},{once:true});
 
-function lockLandscape(){
-  if(screen.orientation && screen.orientation.lock){
-    screen.orientation.lock('landscape-primary').catch(function(){});
-  }
-}
-lockLandscape();
-document.addEventListener('DOMContentLoaded', lockLandscape);
-window.addEventListener('load', lockLandscape);
-document.addEventListener('click', lockLandscape, {once:true});
 
 // CARGAR ESTADO AL INICIAR
 loadState();
