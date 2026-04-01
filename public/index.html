@@ -2812,6 +2812,10 @@ _sub('ordenes', 'ordenes', function(snap) {
     }
 
     _prevFbStatus[mesaNum] = nuevoStatus;
+    // Guardar kdsItems de Firebase para que enviar() use la versión más reciente
+    if(!window._fbKdsItems) window._fbKdsItems = {};
+    if(nueva && nueva.kdsItems) window._fbKdsItems[mesaNum] = Array.isArray(nueva.kdsItems) ? nueva.kdsItems : Object.values(nueva.kdsItems);
+    else if(nueva) window._fbKdsItems[mesaNum] = [];
   });
 
   // Normalizar orden que viene de Firebase (arrays pueden llegar como objetos)
@@ -3376,6 +3380,14 @@ function validarAntesCobrar(mesaId){
   var o = S.ordenes[mesaId];
   if(!o) return {ok: false, msg: 'Orden no encontrada'};
   if(!o.items || o.items.length===0) return {ok: false, msg: 'La orden está vacía'};
+  var tieneFood = (o.items||[]).some(function(it){ return !it.esBev; });
+  if(tieneFood && o.status !== 'en_caja' && o.status !== 'lista'){
+    return {ok: false, msg: 'La orden aún está en cocina — espera a que esté lista'};
+  }
+  var bevsPend = (o.bebP||[]).filter(function(b){ return !b.done; });
+  if(bevsPend.length > 0){
+    return {ok: false, msg: 'Faltan '+bevsPend.length+' bebida(s) por entregar'};
+  }
   return {ok: true};
 }
 
@@ -3669,9 +3681,11 @@ function irAMesaNotif(){
   var m = parseInt(gi('notif-modal').dataset.mesa);
   cerrarNotifModal();
   if(m && S.ordenes[m]){
+    delete S.notifM[m];
+    _prevFbStatus[m] = 'lista';
     S.mesa = m;
     gi('mesero-bar').style.display='flex';
-    updSbar();renderTicket();renderMesas();
+    updSbar();renderTicket();renderMesas();updBadge();
   }
 }
 function liberarDesdeNotif(){
@@ -4103,6 +4117,7 @@ function delI(idx){
   var item = S.ordenes[S.mesa].items[idx];
   if(confirm('¿Eliminar '+item.qty+'x '+item.n+'?')){
     S.ordenes[S.mesa].items.splice(idx,1);
+    if(window.FB) window.FB.setOrden(S.mesa, S.ordenes[S.mesa]);
     renderTicket();
     saveState();
   }
@@ -4241,7 +4256,7 @@ function renderTicket(){
   
   if(sendBtn){
     var hayNuevosFood = o.items.some(function(i){ return !i.esBev && !i.enviado; });
-    if(hayNuevosFood && status !== 'en_cocina' && status !== 'preparando' && status !== 'en_caja'){
+    if(hayNuevosFood && status !== 'en_caja'){
       sendBtn.style.display = 'block';
       sendBtn.disabled = false;
     } else {
@@ -4333,7 +4348,9 @@ function enviar(){
   if(kI.length>0){
     var nuevosKds = kI.map(function(i){return{n:i.n,qty:i.qty,nota:i.nota||'',done:false};});
     kI.forEach(function(i){i.enviado=true;});
-    o.kdsItems = (o.kdsItems||[]).concat(nuevosKds);
+    // Usar kdsItems de Firebase (fuente de verdad) para no pisar el progreso de cocina
+    var kdsBase = window._fbKdsItems && window._fbKdsItems[S.mesa] ? window._fbKdsItems[S.mesa] : (o.kdsItems||[]);
+    o.kdsItems = kdsBase.concat(nuevosKds);
     o.status='en_cocina';
     o.ts=Date.now();
     o.hora=nowT();
@@ -4404,18 +4421,22 @@ function togK(k,idx){
 
 function kSt(k,st){
   var o=S.ordenes[k];if(!o)return;
-  var prevStatus=o.status;
-  o.status=st==='entregada_cocina'?'lista':st;
-  if(st==='lista'||st==='entregada_cocina'){
+  if(st==='lista'){
     o.status='lista';
-    if(!S.notifM[k]){S.notifM[k]=true;notif(k);}
+    window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:parseInt(k)}}));
     if(S.mesa===parseInt(k))updSbar();
     if(typeof beep==='function') beep();
     if(typeof buzz==='function') buzz();
     showToast('Orden lista — '+gN(parseInt(k)),'ok');
+  } else if(st==='entregada_cocina'){
+    o.status='en_caja';
+    if(S.mesa===parseInt(k)){S.mesa=null;gi('mesero-bar').style.display='none';}
+    showToast('Entregada: '+gN(parseInt(k)),'ok');
+  } else {
+    o.status=st;
   }
   if(window.FB)window.FB.setOrden(k,o);
-  renderKDS();
+  renderKDS();renderMesas();renderCaja();
 }
 
 function updKStat(){
