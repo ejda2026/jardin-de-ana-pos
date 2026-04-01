@@ -2614,6 +2614,19 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 <!-- QR Code Generator -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+<!-- Funciones globales requeridas por el módulo Firebase -->
+<script>
+window.setSyncStatus = function(status) {
+  var dot = document.getElementById('sync-dot'), lbl = document.getElementById('sync-label');
+  if(!dot||!lbl) return;
+  dot.className = 'sync-dot ' + status;
+  lbl.textContent = status === 'on' ? 'En línea' : status === 'syncing' ? 'Sincronizando...' : 'Sin conexión';
+};
+window.V = function(v) {
+  if(window._V) window._V(v);
+};
+</script>
+
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
@@ -2639,7 +2652,7 @@ try {
   window._db = db;
 } catch(e) {
   console.error('Firebase init error:', e);
-  setSyncStatus('off');
+  window.setSyncStatus('off');
 }
 
 // Marcar que el módulo cargó
@@ -2747,22 +2760,22 @@ function aplicarRol(rol, email){
 
 // ─── HELPERS FIREBASE ───────────────────────────────────────
 function syncSet(path, data) {
-  setSyncStatus('syncing');
+  window.setSyncStatus('syncing');
   return set(ref(db, path), data)
-    .then(() => setSyncStatus('on'))
-    .catch(e => { console.error(e); setSyncStatus('off'); });
+    .then(() => window.setSyncStatus('on'))
+    .catch(e => { console.error(e); window.setSyncStatus('off'); });
 }
 function syncUpdate(path, data) {
-  setSyncStatus('syncing');
+  window.setSyncStatus('syncing');
   return update(ref(db, path), data)
-    .then(() => setSyncStatus('on'))
-    .catch(e => { console.error(e); setSyncStatus('off'); });
+    .then(() => window.setSyncStatus('on'))
+    .catch(e => { console.error(e); window.setSyncStatus('off'); });
 }
 function syncRemove(path) {
-  setSyncStatus('syncing');
+  window.setSyncStatus('syncing');
   return remove(ref(db, path))
-    .then(() => setSyncStatus('on'))
-    .catch(e => { console.error(e); setSyncStatus('off'); });
+    .then(() => window.setSyncStatus('on'))
+    .catch(e => { console.error(e); window.setSyncStatus('off'); });
 }
 
 // Fecha de hoy como clave (reinicia datos cada día automáticamente)
@@ -2927,7 +2940,7 @@ function _iniciarConfigSubs(){
   });
 }
 
-setSyncStatus('on');
+window.setSyncStatus('on');
 console.log('Firebase conectado');
 </script>
 
@@ -2966,6 +2979,9 @@ function showToast(msg, tipo){
 }
 
 function setSyncStatus(status) {
+  window.setSyncStatus(status);
+}
+window.setSyncStatus = function(status) {
   var dot = gi('sync-dot'), lbl = gi('sync-label');
   if(!dot||!lbl) return;
   dot.className = 'sync-dot ' + status;
@@ -2975,7 +2991,7 @@ function setSyncStatus(status) {
 // Timeout: si Firebase no conecta en 12 seg, avisar pero dejar usar la app
 setTimeout(function(){
   if(!window._fbModuleLoaded){
-    setSyncStatus('off');
+    window.setSyncStatus('off');
     console.warn('Firebase module tardó en cargar — app funciona sin sync');
   }
 }, 12000);
@@ -3597,7 +3613,7 @@ function V(v){
   }
   if(v==='finanzas'){renderFinanzas();}
 }
-window.V = V;
+window._V = V; window.V = V;
 
 function notif(m){
   
