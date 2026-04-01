@@ -2701,7 +2701,7 @@ onAuthStateChanged(auth, function(user){
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-wrap').style.display = 'block';
     aplicarRol(rol, user.email);
-    V(ROL_INICIO[rol]);
+    window.V(ROL_INICIO[rol]);
     // Activar listeners solo una vez tras autenticación
     if(!_subsActivos){
       _subsActivos = true;
