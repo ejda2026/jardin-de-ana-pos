@@ -2806,9 +2806,14 @@ _sub('ordenes', 'ordenes', function(snap) {
     var statusAnterior = _prevFbStatus[mesaNum] || null;
     var nuevoStatus = nueva ? nueva.status : null;
 
-    // Notificar al mesero cuando Firebase reporta transicion a lista
-    if(rol === 'mesero' && nuevoStatus === 'lista' && statusAnterior !== null && statusAnterior !== 'lista') {
-      window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:mesaNum}}));
+    // Notificar al mesero: transicion a lista, O si ya estaba lista al abrir (orden reciente <30min)
+    if(rol === 'mesero' && nuevoStatus === 'lista') {
+      var esNueva = statusAnterior !== null && statusAnterior !== 'lista';
+      var esReciente = nueva && nueva.ts && (Date.now() - nueva.ts) < 30*60*1000;
+      var esPrimeraVez = statusAnterior === null && esReciente;
+      if(esNueva || esPrimeraVez) {
+        window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:mesaNum}}));
+      }
     }
 
     _prevFbStatus[mesaNum] = nuevoStatus;
@@ -2847,11 +2852,17 @@ _sub('ordenes', 'ordenes', function(snap) {
       if(prev.descTipo) S.ordenes[mesaNum].descTipo = prev.descTipo;
       if(prev.descVal) S.ordenes[mesaNum].descVal = prev.descVal;
     } else {
-      // Mesa activa: actualizar SOLO el status (no los items que el mesero está editando)
+      // Mesa activa: actualizar status y kdsItems pero no los items que el mesero está editando
       if(S.ordenes[mesaNum] && ordenFB) {
         var oldStatus = S.ordenes[mesaNum].status;
         S.ordenes[mesaNum].status = ordenFB.status;
-        // Si el status cambió a lista, actualizar sbar inmediatamente
+        // Sincronizar kdsItems desde Firebase para que enviar() no pise el progreso de cocina
+        S.ordenes[mesaNum].kdsItems = ordenFB.kdsItems || [];
+        // Sincronizar flag enviado en items locales según kdsItems de Firebase
+        var nombresEnviados = (ordenFB.kdsItems||[]).map(function(k){return k.n;});
+        (S.ordenes[mesaNum].items||[]).forEach(function(it){
+          if(!it.esBev && nombresEnviados.indexOf(it.n) >= 0) it.enviado = true;
+        });
         if(ordenFB.status === 'lista' && oldStatus !== 'lista') {
           updSbar();
         }
@@ -3546,7 +3557,12 @@ function calcP(o,pk){
   var items=Array.isArray(o.items)?o.items:o.items?Object.values(o.items):[];
   var filtered=items.filter(function(i){return i.persona===pk;});
   var sub=filtered.reduce(function(s,i){return s+(i.p||0)*(i.qty||1);},0);
-  return{items:filtered,sub:sub,total:sub};
+  // Aplicar descuento proporcional al subtotal de esta persona
+  var tTotal=calcT(o);
+  var ratio = tTotal.sub > 0 ? sub/tTotal.sub : 0;
+  var descP = parseFloat((tTotal.desc * ratio).toFixed(2));
+  var total = parseFloat((sub - descP).toFixed(2));
+  return{items:filtered,sub:sub,desc:descP,total:total};
 }
 function getTG(){
   var f=S.gastosFijos.filter(function(g){return g.a;}).reduce(function(s,g){return s+g.m;},0);
@@ -4101,6 +4117,8 @@ function addItem(n,p,c){
     o.items.push({n:n,p:p,qty:1,esBev:isBev,c:c,persona:defP,nota:''});
   }
   var idx=o.items.indexOf(ex||o.items[o.items.length-1]);
+  var yaEnviado = o.items.some(function(i){return i.enviado;});
+  if(yaEnviado && window.FB) window.FB.setOrden(S.mesa, o);
   renderTicket();
   abrirModalNota(idx);
 }
@@ -4110,6 +4128,8 @@ function chQ(idx,d){
   var o=S.ordenes[S.mesa];
   o.items[idx].qty+=d;
   if(o.items[idx].qty<=0)o.items.splice(idx,1);
+  var yaEnviado = o.items.some(function(i){return i.enviado;});
+  if(yaEnviado && window.FB) window.FB.setOrden(S.mesa, o);
   renderTicket();
 }
 function delI(idx){
@@ -4267,7 +4287,8 @@ function renderTicket(){
   // Mostrar botón "Mandar a caja" cuando está lista, o cuando solo hay bebidas
   if(entBtn){
     var soloBebs = o.items.length>0 && o.items.every(function(it){return it.esBev;});
-    if(status==='lista' || (soloBebs && status==='abierta')){
+    var todoEnviado = o.items.filter(function(it){return !it.esBev;}).every(function(it){return it.enviado;});
+    if(status==='lista' || (soloBebs && status!=='en_caja') || (todoEnviado && status!=='en_cocina' && status!=='preparando' && status!=='en_caja')){
       entBtn.style.display = 'block';
     } else {
       entBtn.style.display = 'none';
@@ -4346,7 +4367,7 @@ function enviar(){
   });
   // Solo los platillos nuevos (no bevidas) van a cocina
   if(kI.length>0){
-    var nuevosKds = kI.map(function(i){return{n:i.n,qty:i.qty,nota:i.nota||'',done:false};});
+    var nuevosKds = kI.map(function(i){return{n:i.n,qty:i.qty,nota:i.nota||'',done:false,nuevo:true};});
     kI.forEach(function(i){i.enviado=true;});
     // Usar kdsItems de Firebase (fuente de verdad) para no pisar el progreso de cocina
     var kdsBase = window._fbKdsItems && window._fbKdsItems[S.mesa] ? window._fbKdsItems[S.mesa] : (o.kdsItems||[]);
@@ -4398,7 +4419,7 @@ function renderKDS(){
       )+'</div></div>'+
       '<div class="kbody">';
     items.forEach(function(it,ii){
-      html+='<div class="krow'+(it.done?' done':'')+'" id="kr-'+k+'-'+ii+'"><div class="kq">'+it.qty+'</div><div class="knw"><div class="kn">'+esc(it.n)+'</div>'+(it.nota?'<div class="knote">Nota: '+esc(it.nota)+'</div>':'')+
+      html+='<div class="krow'+(it.done?' done':'')+(it.nuevo?' knuevo':'')+'" id="kr-'+k+'-'+ii+'"><div class="kq">'+it.qty+'</div><div class="knw"><div class="kn">'+esc(it.n)+(it.nuevo?'<span style="margin-left:6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;vertical-align:middle">NUEVO</span>':'')+'</div>'+(it.nota?'<div class="knote">Nota: '+esc(it.nota)+'</div>':'')+
         '</div><div class="kchk'+(it.done?' done':'')+'" onclick="togK('+k+','+ii+')">'+(it.done?'OK':'')+'</div></div>';
     });
     html+='</div><div class="kactions">';
