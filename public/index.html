@@ -2633,7 +2633,7 @@ window.V = function(v) {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserSessionPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC470_8CqDpdqfiIiQu9E42xPNHeLmHXcs",
@@ -2692,7 +2692,7 @@ window.doLogin = function(){
   var btn = document.getElementById('login-btn');
   btn.disabled = true;
   btn.textContent = 'Entrando...';
-  setPersistence(auth, browserSessionPersistence)
+  setPersistence(auth, browserLocalPersistence)
     .then(function(){ return signInWithEmailAndPassword(auth, email, pass); })
     .catch(function(e){
       var msg = 'Correo o contraseña incorrectos';
@@ -2838,6 +2838,7 @@ _sub('ordenes', 'ordenes', function(snap) {
     else if(!Array.isArray(o.pagosPP)) o.pagosPP = Object.values(o.pagosPP);
     if(!o.bebidas) o.bebidas = [];
     else if(!Array.isArray(o.bebidas)) o.bebidas = Object.values(o.bebidas);
+    if(o.status==='abierta'||o.status==='en_cocina') delete o.servida;
     return o;
   }
 
@@ -3984,6 +3985,7 @@ function selMesa(n){
   // Si no hay orden, crear nueva CON NOMBRE DE MESERO
   if(!S.ordenes[n]){
     pedirMesero('Mesa '+gN(n), function(nombreMesero){
+      if(S.ordenes[n]){notice('Esa mesa ya fue tomada por otro mesero','var(--orange)');renderMesas();return;}
       if(!nombreMesero) nombreMesero = 'Sin asignar';
       S.ordenes[n]={items:[],bebP:[],status:'abierta',hora:nowT(),numP:1,descTipo:null,descVal:0,mesero:nombreMesero};
       if(S.turnoEnCurso && S.turnoEnCurso.meseros && !S.turnoEnCurso.meseros.includes(nombreMesero)){
