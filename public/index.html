@@ -522,6 +522,8 @@ body{
 .entbtn.lista:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,201,122,.3)}
 .cancelbtn{width:100%;padding:7px;background:transparent;border:none;color:var(--ink3);font-size:11px;cursor:pointer;border-radius:8px;transition:all .2s}
 .cancelbtn:hover{color:var(--red);background:var(--red3);transform:translateY(-1px)}
+.servbtn{width:100%;padding:10px;border-radius:10px;font-family:\'Playfair Display\',serif;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--green2);background:var(--green3);color:var(--green);display:none;margin-bottom:6px;transition:all .2s}
+.servbtn.done{background:var(--green2);color:#fff;border-color:var(--green);cursor:default;opacity:.8}
 
 .cwrap{padding:16px;background:#f4f0e8;min-height:calc(100vh - 50px)}
 .ctop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
@@ -1408,6 +1410,7 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
         <div class="tktotal"><span class="tl">Total</span><span class="tv" id="tktot">$0.00</span></div>
         <button class="sendbtn" id="sendbtn" onclick="enviar()" disabled>Enviar orden ↑</button>
         <button class="entbtn" id="entbtn" onclick="entregarMesa()"></button>
+        <button class="servbtn" id="servbtn" onclick="marcarServida()">✓ Mesa servida</button>
         <button class="cancelbtn" onclick="cancelar()">Cancelar orden</button>
       </div>
     </div>
@@ -2441,7 +2444,7 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <!-- MODAL NOTIFICACION ORDEN LISTA -->
 <div class="notif-modal" id="notif-modal" style="z-index:99999">
-  <div class="notif-overlay"></div>
+  <div class="notif-overlay" onclick="cerrarNotifModal()"></div>
   <div class="notif-card" style="width:380px;max-width:94vw;padding:0;overflow:hidden;border-radius:24px;background:#fff;box-shadow:0 30px 80px rgba(0,0,0,.6)">
     <!-- Header verde llamativo -->
     <div style="background:linear-gradient(135deg,#3A8A72,#5EB89A);padding:28px 28px 20px;text-align:center">
@@ -2454,9 +2457,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
       <div id="notif-items-lista" style="font-size:14px;color:#2C3E35;line-height:2"></div>
     </div>
     <!-- Botones -->
-    <div style="padding:16px 24px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button onclick="irAMesaNotif()" style="padding:14px;background:#5EB89A;color:#fff;border:none;border-radius:12px;font-family:\'Playfair Display\',serif;font-size:15px;font-weight:700;cursor:pointer">Voy a servirla</button>
-      <button onclick="liberarDesdeNotif()" style="padding:14px;background:#2C3E35;color:#A8E6D3;border:none;border-radius:12px;font-family:\'Playfair Display\',serif;font-size:15px;font-weight:700;cursor:pointer">Enviar a caja</button>
+    <div style="padding:16px 24px">
+      <button onclick="irAMesaNotif()" style="width:100%;padding:14px;background:#5EB89A;color:#fff;border:none;border-radius:12px;font-family:\'Playfair Display\',serif;font-size:15px;font-weight:700;cursor:pointer">Voy a servirla</button>
     </div>
   </div>
 </div>
@@ -3405,6 +3407,7 @@ function validarAntesCobrar(mesaId){
 var S={
   cat:'Todos',mesa:null,
   ordenes:{},
+  colaEspera:{},
   ventas:[],folio:1,
   // SISTEMA DE TURNOS
   turnoActual:null,
@@ -3671,14 +3674,15 @@ function notif(m){
 
   // Llenar items de la orden en el modal
   var itemsEl = gi('notif-items-lista');
-  if(itemsEl && o && o.kdsItems && o.kdsItems.length){
-    itemsEl.innerHTML = o.kdsItems.map(function(it){
+  var kdsData = (window._fbKdsItems && window._fbKdsItems[m]) || (o && o.kdsItems) || [];
+  if(itemsEl && kdsData.length){
+    itemsEl.innerHTML = kdsData.map(function(it){
       return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #F1F1F1">'
         +'<span><strong>'+it.qty+'x</strong> '+esc(it.n)+'</span>'
         +(it.nota?'<span style="font-size:11px;color:#FF8A7A;font-style:italic">'+esc(it.nota)+'</span>':'')
         +'</div>';
     }).join('');
-  } else if(itemsEl) {
+  } else if(itemsEl){
     itemsEl.innerHTML = '<div style="color:#6B7A72;font-style:italic">Ver detalles en la mesa</div>';
   }
 
@@ -3689,7 +3693,7 @@ function notif(m){
   setTimeout(function(){beep();},1000);
   setTimeout(function(){beep();},1500);
 }
-window.addEventListener('ordenLista', function(e){ notif(e.detail.mesa); });
+window.addEventListener('ordenLista', function(e){ if(window._rolActual==='mesero') notif(e.detail.mesa); });
 function cerrarNotifModal(){
   gi('notif-modal').classList.remove('on');
 }
@@ -3948,18 +3952,40 @@ function renderMesas(){
 }
 
 function selMesa(n){
-  // Si la orden esta en_caja (pendiente cobro), NO permitir editar ni sobreescribir
-  if(S.ordenes[n]&&S.ordenes[n].status==='en_caja'){
-    notice('⚠️ Esta mesa está pendiente de cobro en Caja','var(--orange)');
+  // Si la orden está en_caja: permitir crear orden en cola de espera
+  if(S.ordenes[n] && S.ordenes[n].status==='en_caja'){
+    if(S.colaEspera[n]){
+      // Ya hay una orden en espera — abrirla para editar
+      S.mesa = n;
+      S._mesaEnEspera = true;
+      gi('mesero-bar').style.display='flex';
+      gi('pcn').textContent = S.colaEspera[n].numP||1;
+      renderMesas();renderTicketEspera(n);renderBevs();updSbar();
+      notice('Editando orden en espera de '+gN(n),'var(--blue2)');
+      return;
+    }
+    pedirMesero('Nueva orden — '+gN(n), function(nombreMesero){
+      if(!nombreMesero) nombreMesero = 'Sin asignar';
+      S.colaEspera[n] = {items:[],bebP:[],status:'abierta',hora:nowT(),numP:1,descTipo:null,descVal:0,mesero:nombreMesero};
+      S.mesa = n;
+      S._mesaEnEspera = true;
+      if(S.turnoEnCurso && S.turnoEnCurso.meseros && !S.turnoEnCurso.meseros.includes(nombreMesero)){
+        S.turnoEnCurso.meseros.push(nombreMesero);
+      }
+      notice('Orden en espera creada — se activará al cobrar la mesa anterior','var(--blue2)');
+      gi('mesero-bar').style.display='flex';
+      gi('pcn').textContent=1;
+      renderMesas();renderTicketEspera(n);renderBevs();updSbar();
+    });
     return;
   }
+  S._mesaEnEspera = false;
   S.mesa=n;
   // Si no hay orden, crear nueva CON NOMBRE DE MESERO
   if(!S.ordenes[n]){
     pedirMesero('Mesa '+gN(n), function(nombreMesero){
       if(!nombreMesero) nombreMesero = 'Sin asignar';
       S.ordenes[n]={items:[],bebP:[],status:'abierta',hora:nowT(),numP:1,descTipo:null,descVal:0,mesero:nombreMesero};
-      // C4: Registrar mesero en turno actual
       if(S.turnoEnCurso && S.turnoEnCurso.meseros && !S.turnoEnCurso.meseros.includes(nombreMesero)){
         S.turnoEnCurso.meseros.push(nombreMesero);
       }
@@ -3975,11 +4001,31 @@ function selMesa(n){
   renderMesas();renderTicket();renderBevs();updSbar();
 }
 
+function getOrdenActiva(){
+  if(!S.mesa) return null;
+  if(S._mesaEnEspera) return S.colaEspera[S.mesa] || null;
+  return S.ordenes[S.mesa] || null;
+}
+
+function renderTicketEspera(n){
+  S._mesaEnEspera = true;
+  renderTicket();
+}
+
 function chP(d){
   if(!S.mesa||!S.ordenes[S.mesa])return;
   var o=S.ordenes[S.mesa];
   o.numP=Math.max(1,Math.min(6,(o.numP||1)+d));
   gi('pcn').textContent=o.numP;renderTicket();
+}
+
+function marcarServida(){
+  var o=getOrdenActiva();
+  if(!o||!S.mesa)return;
+  if(o.servida)return;
+  o.servida=true;
+  if(window.FB)window.FB.setOrden(S.mesa,o);
+  renderTicket();renderMesas();
 }
 
 function entregarMesa(){
@@ -4098,7 +4144,7 @@ function renderMenu(){
 function addItem(n,p,c){
   if(!S.mesa){notice('Selecciona una mesa primero','var(--orange)');return;}
   var isBev=c===true||BEBS.indexOf(c)>=0;
-  var o=S.ordenes[S.mesa];
+  var o=getOrdenActiva();
 
   var defP=o.numP===1?'p1':null;
   
@@ -4125,24 +4171,29 @@ function addItem(n,p,c){
 
 function chQ(idx,d){
   if(!S.mesa)return;
-  var o=S.ordenes[S.mesa];
+  var o=getOrdenActiva();
+  if(!o)return;
   o.items[idx].qty+=d;
   if(o.items[idx].qty<=0)o.items.splice(idx,1);
-  var yaEnviado = o.items.some(function(i){return i.enviado;});
-  if(yaEnviado && window.FB) window.FB.setOrden(S.mesa, o);
+  if(!S._mesaEnEspera){
+    var yaEnviado = o.items.some(function(i){return i.enviado;});
+    if(yaEnviado && window.FB) window.FB.setOrden(S.mesa, o);
+  }
   renderTicket();
 }
 function delI(idx){
   if(!S.mesa) return;
-  var item = S.ordenes[S.mesa].items[idx];
+  var o=getOrdenActiva();
+  if(!o)return;
+  var item = o.items[idx];
   if(confirm('¿Eliminar '+item.qty+'x '+item.n+'?')){
-    S.ordenes[S.mesa].items.splice(idx,1);
-    if(window.FB) window.FB.setOrden(S.mesa, S.ordenes[S.mesa]);
+    o.items.splice(idx,1);
+    if(!S._mesaEnEspera && window.FB) window.FB.setOrden(S.mesa, o);
     renderTicket();
     saveState();
   }
 }
-function setNota(idx,v){if(!S.mesa||!S.ordenes[S.mesa])return;S.ordenes[S.mesa].items[idx].nota=v;}
+function setNota(idx,v){if(!S.mesa)return;var o=getOrdenActiva();if(!o)return;o.items[idx].nota=v;}
 var _notaIdx=null;
 var _notaExtras=[];
 
@@ -4247,20 +4298,22 @@ function setP2(idx,p){
 
 function renderTicket(){
   var el=gi('tkscroll');
-  var o=S.mesa?S.ordenes[S.mesa]:null;
+  var o=S.mesa ? getOrdenActiva() : null;
   updSbar();
   
   // Controlar visibilidad del botón enviar según el estado
   var sendBtn = gi('sendbtn');
   var entBtn = gi('entbtn');
+  var servBtn = gi('servbtn');
   var meseroBar = gi('mesero-bar');
   var meseroNombre = gi('mesero-nombre');
-  
+
   if(!o||!o.items||o.items.length===0){
     el.innerHTML='<div class="tkempty">Toca un platillo para agregarlo</div>';
     gi('tktot').textContent='$0.00';
     if(sendBtn) sendBtn.style.display = 'none';
     if(entBtn) entBtn.style.display = 'none';
+    if(servBtn) servBtn.style.display = 'none';
     if(meseroBar) meseroBar.style.display = 'none';
     return;
   }
@@ -4292,6 +4345,16 @@ function renderTicket(){
       entBtn.style.display = 'block';
     } else {
       entBtn.style.display = 'none';
+    }
+  }
+
+  if(servBtn){
+    if(status!=='en_caja'&&status!=='abierta'){
+      servBtn.style.display='block';
+      if(o.servida){servBtn.className='servbtn done';servBtn.textContent='✓ Servida';}
+      else{servBtn.className='servbtn';servBtn.textContent='✓ Mesa servida';}
+    } else {
+      servBtn.style.display='none';
     }
   }
   
@@ -4354,8 +4417,13 @@ function togBev(i){
 
 function enviar(){
   if(!S.mesa){notice('Selecciona una mesa','var(--orange)');return;}
-  var o=S.ordenes[S.mesa];
+  var o=getOrdenActiva();
   if(!o||!o.items||o.items.length===0){notice('La orden esta vacia','var(--orange)');return;}
+  if(S._mesaEnEspera){
+    notice('Orden en espera guardada — se enviará a cocina al activarse','var(--blue2)');
+    renderTicket();
+    return;
+  }
   // Separar platillos nuevos (no enviados) de cocina vs bebidas
   var kI=o.items.filter(function(i){return !i.esBev && !i.enviado;});
   var bI=o.items.filter(function(i){return i.esBev && !i.enviado;});
@@ -4446,8 +4514,6 @@ function kSt(k,st){
     o.status='lista';
     window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:parseInt(k)}}));
     if(S.mesa===parseInt(k))updSbar();
-    if(typeof beep==='function') beep();
-    if(typeof buzz==='function') buzz();
     showToast('Orden lista — '+gN(parseInt(k)),'ok');
   } else if(st==='entregada_cocina'){
     o.status='en_caja';
@@ -4625,12 +4691,21 @@ function cerrarM(){
   S.ventas.push(venta);
   if(window.FB){window.FB.saveVenta(venta);window.FB.removeOrden(m);}
   delete S.ordenes[m];
+  delete _prevFbStatus[m];
+  // Activar orden en espera si existe
+  if(S.colaEspera[m]){
+    S.ordenes[m] = S.colaEspera[m];
+    delete S.colaEspera[m];
+    if(window.FB) window.FB.setOrden(m, S.ordenes[m]);
+    notice('Orden en espera activada para '+gN(parseInt(m)),'var(--green)');
+  }
+  if(S._mesaEnEspera && S.mesa == m) S._mesaEnEspera = false;
   S.cajaId=null;
   renderCaja();
   gi('cpanel').innerHTML='<div class="cempty">Selecciona una orden</div>';
   renderMesas();
-  notice('Confirmado: '+gN(parseInt(m))+' cerrada - '+fmt(t.total));
-  saveState(); // Guardar después de cerrar venta
+  if(!S.colaEspera[m]) notice('Confirmado: '+gN(parseInt(m))+' cerrada - '+fmt(t.total));
+  saveState();
 }
 function setCM(m){
   // Preservar propina antes de cambiar modo
@@ -4712,12 +4787,20 @@ function cobL(){
   S.ventas.push(venta);
   if(window.FB){window.FB.saveVenta(venta);window.FB.removeOrden(m);}
   delete S.ordenes[m];
+  delete _prevFbStatus[m];
   S.cajaId=null;
+  if(S.colaEspera[m]){
+    S.ordenes[m]=S.colaEspera[m];
+    delete S.colaEspera[m];
+    if(window.FB)window.FB.setOrden(m,S.ordenes[m]);
+    notice('Orden en espera activada para '+gN(parseInt(m)),'var(--green)');
+  }
+  if(S._mesaEnEspera&&S.mesa==m)S._mesaEnEspera=false;
   renderCaja();
   gi('cpanel').innerHTML='<div class="cempty">Selecciona una orden</div>';
   renderMesas();
   notice('Confirmado: '+gN(parseInt(m))+' cobrada - '+fmt(totalFinal)+(propina>0?' (incluye propina '+fmt(propina)+')':''));
-  saveState(); // Guardar después de cobrar
+  saveState();
 }
 
 function updDia(){
@@ -5314,6 +5397,7 @@ function renderDashboard(){
           else{st='cocina';stLabel='Cocina '+tiempoMin+'min';dotCls='ocupada';}
         } else if(o.status==='abierta'){st='abierta';stLabel='Abierta';dotCls='ocupada';}
         if(o.items&&o.items.length) extra=' · '+o.items.length+' plat.';
+        if(o.servida) extra+=' <span style="color:var(--green);font-weight:700;font-size:11px">✓ Servida</span>';
       }
       if(st!=='libre'){
         mesasHtml+='<div class="dash-mesa-row">'+
