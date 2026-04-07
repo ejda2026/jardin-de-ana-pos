@@ -1,0 +1,22 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "ordenes": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "ventas": {
+      ".read": "auth != null",
+      ".write": "auth != null && (request.auth.token.email == 'caja@jardindeana.com' || request.auth.token.email == 'admin@jardindeana.com')"
+    },
+    "config": {
+      ".read": "auth != null",
+      ".write": "auth != null && request.auth.token.email == 'admin@jardindeana.com'"
+    },
+    "cortes": {
+      ".read": "auth != null && (request.auth.token.email == 'caja@jardindeana.com' || request.auth.token.email == 'admin@jardindeana.com')",
+      ".write": "auth != null && (request.auth.token.email == 'caja@jardindeana.com' || request.auth.token.email == 'admin@jardindeana.com')"
+    }
+  }
+}

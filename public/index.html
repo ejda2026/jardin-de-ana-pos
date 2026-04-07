@@ -3359,7 +3359,6 @@ function saveState(){
     var state = {
       ordenes: S.ordenes,
       colaEspera: S.colaEspera,
-      ventas: S.ventas,
       folio: S.folio,
       timestamp: Date.now()
     };
@@ -3377,7 +3376,6 @@ function loadState(){
       var data = JSON.parse(saved);
       S.ordenes = data.ordenes || {};
       S.colaEspera = data.colaEspera || {};
-      S.ventas = data.ventas || [];
       S.folio = parseInt(localStorage.getItem('jda_folio')) || data.folio || 1;
       console.log('Estado cargado desde localStorage');
     }
@@ -3411,6 +3409,7 @@ function validarAntesCobrar(mesaId){
   return {ok: true};
 }
 
+var _sesionPfx=(function(){var t=Date.now().toString(36);return(t.slice(-1)+(Math.random()*36|0).toString(36)).toUpperCase();})();
 var S={
   cat:'Todos',mesa:null,_mesaEnEspera:false,
   ordenes:{},
@@ -4697,7 +4696,7 @@ function cerrarM(){
   }
   
   var t=calcT(o);
-  var f=String(S.folio++).padStart(4,'0');
+  var f=_sesionPfx+String(S.folio++).padStart(3,'0');
   var ms=[];
   if(o.pagosPP)o.pagosPP.forEach(function(p){if(p.metodo&&ms.indexOf(p.metodo)<0)ms.push(p.metodo);});
   var mf=ms.length===1?ms[0]:'mixto';
@@ -4780,8 +4779,8 @@ function cobL(){
   var t=calcT(o);
   var propina = o.propina || 0;
   var totalFinal = t.total + propina;
-  
-  var f=String(S.folio++).padStart(4,'0');
+
+  var f=_sesionPfx+String(S.folio++).padStart(3,'0');
   var m=S.cajaId;
   
   // AGREGAR NOMBRE DEL MESERO A LA VENTA
