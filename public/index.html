@@ -2632,7 +2632,7 @@ window.V = function(v) {
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -2708,6 +2708,28 @@ window.doLogout = function(){
   signOut(auth);
 };
 
+var _rolInterno = null;
+Object.defineProperty(window, '_rolActual', {
+  get: function(){ return _rolInterno; },
+  set: function(v){ if(v === null || _rolInterno === null) _rolInterno = v; },
+  configurable: false, enumerable: true
+});
+
+async function purgarVentasAntiguas(){
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  var cutoffKey = cutoff.toISOString().slice(0, 10);
+  try {
+    var snap = await get(query(ref(db, 'ventas'), orderByKey(), endBefore(cutoffKey)));
+    if(!snap.exists()) return;
+    var removes = [];
+    snap.forEach(function(child){ removes.push(remove(ref(db, 'ventas/'+child.key))); });
+    await Promise.all(removes);
+    if(removes.length > 0) console.log('Ventas antiguas purgadas: '+removes.length+' días eliminados');
+  } catch(e){ console.error('Error purgando ventas:', e); }
+}
+window.purgarVentasAntiguas = purgarVentasAntiguas;
+
 var _subsActivos = false;
 onAuthStateChanged(auth, function(user){
   if(user){
@@ -2717,6 +2739,7 @@ onAuthStateChanged(auth, function(user){
     document.getElementById('app-wrap').style.display = 'block';
     aplicarRol(rol, user.email);
     window.V(ROL_INICIO[rol]);
+    if(rol === 'admin') purgarVentasAntiguas();
     // Activar listeners solo una vez tras autenticación
     if(!_subsActivos){
       _subsActivos = true;
