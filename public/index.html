@@ -2915,6 +2915,9 @@ window.FB = {
   setOrden: function(mesaNum, orden) {
     return syncSet('ordenes/' + mesaNum, orden);
   },
+  updateOrden: function(mesaNum, campos) {
+    return syncUpdate('ordenes/' + mesaNum, campos);
+  },
   removeOrden: function(mesaNum) {
     return syncRemove('ordenes/' + mesaNum);
   },
@@ -2933,11 +2936,24 @@ window.FB = {
   },
   saveNomina: function(nomina){
     return syncSet('config/nomina', nomina);
+  },
+  savePrecios: function(precios){
+    return syncSet('config/precios', precios);
+  },
+  saveNumMesas: function(n){
+    return syncSet('config/numMesas', n);
   }
 };
 
 function _iniciarConfigSubs(){
   var rol = window._rolActual;
+  _sub('config_numMesas', 'config/numMesas', function(snap) {
+    if(snap.val()){ window.NM=parseInt(snap.val()); if(window.renderMesas)window.renderMesas(); }
+  });
+  _sub('config_precios', 'config/precios', function(snap) {
+    var precios=snap.val();
+    if(precios && window.ME) window.ME.forEach(function(item){ if(precios[item.n]!==undefined) item.p=precios[item.n]; });
+  });
   if(rol === 'caja' || rol === 'admin') {
     _sub('cortes', 'cortes', function(snap) { S.cortesHistorial = snap.val() || {}; });
   }
@@ -3750,7 +3766,7 @@ function liberarDesdeNotif(){
   }
   var nombre = gN(m);
   S.ordenes[m].status = 'en_caja';
-  if(window.FB) window.FB.setOrden(m, S.ordenes[m]);
+  if(window.FB) window.FB.updateOrden(m, {status:'en_caja'});
   delete S.notifM[m];
   if(S.mesa === m){
     S.mesa = null;
@@ -4053,7 +4069,7 @@ function marcarServida(){
   if(!o||o.servida)return;
   var m=S.mesa;
   o.servida=true;
-  if(window.FB)window.FB.setOrden(m,o);
+  if(window.FB)window.FB.updateOrden(m,{servida:true});
   renderTicket();renderMesas();
 }
 
@@ -4077,7 +4093,7 @@ function entregarMesa(){
   // Cambiar status a en_caja para que deje de brillar en mesas
   // pero siga apareciendo en Caja
   S.ordenes[mesaNum].status='en_caja';
-  if(window.FB)window.FB.setOrden(mesaNum,S.ordenes[mesaNum]);
+  if(window.FB)window.FB.updateOrden(mesaNum,{status:'en_caja'});
   delete S.notifM[mesaNum];
   S.mesa=null;
   gi('mesero-bar').style.display='none';
@@ -4562,7 +4578,7 @@ function kSt(k,st){
   } else {
     o.status=st;
   }
-  if(window.FB)window.FB.setOrden(k,o);
+  if(window.FB)window.FB.updateOrden(k,{status:o.status});
   renderKDS();renderMesas();renderCaja();
 }
 
