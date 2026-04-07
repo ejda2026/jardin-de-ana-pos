@@ -3398,6 +3398,9 @@ function validarAntesCobrar(mesaId){
   if(tieneFood && o.status !== 'en_caja' && o.status !== 'lista'){
     return {ok: false, msg: 'La orden aún está en cocina — espera a que esté lista'};
   }
+  if(!tieneFood && o.status === 'abierta'){
+    return {ok: false, msg: 'La orden aún no ha sido enviada'};
+  }
   var bevsPend = (o.bebP||[]).filter(function(b){ return !b.done; });
   if(bevsPend.length > 0){
     return {ok: false, msg: 'Faltan '+bevsPend.length+' bebida(s) por entregar'};
@@ -4022,11 +4025,12 @@ function chP(d){
 }
 
 function marcarServida(){
-  var o=getOrdenActiva();
-  if(!o||!S.mesa)return;
-  if(o.servida)return;
+  if(!S.mesa||S._mesaEnEspera)return;
+  var o=S.ordenes[S.mesa];
+  if(!o||o.servida)return;
+  var m=S.mesa;
   o.servida=true;
-  if(window.FB)window.FB.setOrden(S.mesa,o);
+  if(window.FB)window.FB.setOrden(m,o);
   renderTicket();renderMesas();
 }
 
@@ -4165,8 +4169,7 @@ function addItem(n,p,c){
     o.items.push({n:n,p:p,qty:1,esBev:isBev,c:c,persona:defP,nota:''});
   }
   var idx=o.items.indexOf(ex||o.items[o.items.length-1]);
-  var yaEnviado = o.items.some(function(i){return i.enviado;});
-  if(yaEnviado && window.FB) window.FB.setOrden(S.mesa, o);
+  if(window.FB) window.FB.setOrden(S.mesa, S._mesaEnEspera ? S.colaEspera[S.mesa] : o);
   renderTicket();
   abrirModalNota(idx);
 }
@@ -4177,10 +4180,7 @@ function chQ(idx,d){
   if(!o)return;
   o.items[idx].qty+=d;
   if(o.items[idx].qty<=0)o.items.splice(idx,1);
-  if(!S._mesaEnEspera){
-    var yaEnviado = o.items.some(function(i){return i.enviado;});
-    if(yaEnviado && window.FB) window.FB.setOrden(S.mesa, o);
-  }
+  if(window.FB) window.FB.setOrden(S.mesa, S._mesaEnEspera ? S.colaEspera[S.mesa] : o);
   renderTicket();
 }
 function delI(idx){
@@ -4190,7 +4190,7 @@ function delI(idx){
   var item = o.items[idx];
   if(confirm('¿Eliminar '+item.qty+'x '+item.n+'?')){
     o.items.splice(idx,1);
-    if(!S._mesaEnEspera && window.FB) window.FB.setOrden(S.mesa, o);
+    if(window.FB) window.FB.setOrden(S.mesa, S._mesaEnEspera ? S.colaEspera[S.mesa] : o);
     renderTicket();
     saveState();
   }
@@ -4229,7 +4229,7 @@ function renderExtrasSelNota(){
 
 function actualizarPrecioNota(){
   if(_notaIdx===null||!S.mesa)return;
-  var o=S.ordenes[S.mesa];
+  var o=getOrdenActiva();
   if(!o||!o.items[_notaIdx])return;
   var base=o.items[_notaIdx]._precioBase||o.items[_notaIdx].p;
   o.items[_notaIdx]._precioBase=base;
@@ -4239,7 +4239,7 @@ function actualizarPrecioNota(){
 function abrirModalNota(idx){
   _notaIdx=idx;
   _notaExtras=[];
-  var o=S.ordenes[S.mesa];
+  var o=getOrdenActiva();
   if(!o||!o.items[idx])return;
   gi('modal-nota-nombre').textContent=o.items[idx].n;
   gi('modal-nota-input').value=o.items[idx].nota||'';
@@ -4294,7 +4294,9 @@ function renderExtrasSelMod(){
 }
 function setP2(idx,p){
   if(!S.mesa)return;
-  var it=S.ordenes[S.mesa].items[idx];
+  var o=getOrdenActiva();
+  if(!o)return;
+  var it=o.items[idx];
   it.persona=it.persona===p?null:p;renderTicket();
 }
 
@@ -4519,7 +4521,7 @@ function kSt(k,st){
     showToast('Orden lista — '+gN(parseInt(k)),'ok');
   } else if(st==='entregada_cocina'){
     o.status='en_caja';
-    if(S.mesa===parseInt(k)){S.mesa=null;gi('mesero-bar').style.display='none';}
+    if(S.mesa===parseInt(k)){S.mesa=null;S._mesaEnEspera=false;gi('mesero-bar').style.display='none';}
     showToast('Entregada: '+gN(parseInt(k)),'ok');
   } else {
     o.status=st;
