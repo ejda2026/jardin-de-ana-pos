@@ -2795,6 +2795,7 @@ function _sub(key, path, cb){
 
 // Rastreador de estados previos recibidos desde Firebase (independiente de S.ordenes)
 var _prevFbStatus = {};
+window._prevFbStatus = _prevFbStatus;
 
 // ─── ESCUCHAR CAMBIOS EN TIEMPO REAL ────────────────────────
 function iniciarSuscripciones(){
@@ -3357,6 +3358,7 @@ function saveState(){
   try {
     var state = {
       ordenes: S.ordenes,
+      colaEspera: S.colaEspera,
       ventas: S.ventas,
       folio: S.folio,
       timestamp: Date.now()
@@ -3374,6 +3376,7 @@ function loadState(){
     if(saved){
       var data = JSON.parse(saved);
       S.ordenes = data.ordenes || {};
+      S.colaEspera = data.colaEspera || {};
       S.ventas = data.ventas || [];
       S.folio = parseInt(localStorage.getItem('jda_folio')) || data.folio || 1;
       console.log('Estado cargado desde localStorage');
@@ -3409,7 +3412,7 @@ function validarAntesCobrar(mesaId){
 }
 
 var S={
-  cat:'Todos',mesa:null,
+  cat:'Todos',mesa:null,_mesaEnEspera:false,
   ordenes:{},
   colaEspera:{},
   ventas:[],folio:1,
@@ -3706,7 +3709,7 @@ function irAMesaNotif(){
   cerrarNotifModal();
   if(m && S.ordenes[m]){
     delete S.notifM[m];
-    _prevFbStatus[m] = 'lista';
+    if(window._prevFbStatus) window._prevFbStatus[m] = 'lista';
     S.mesa = m;
     gi('mesero-bar').style.display='flex';
     updSbar();renderTicket();renderMesas();updBadge();
@@ -4151,7 +4154,7 @@ function addItem(n,p,c){
   if(!S.mesa){notice('Selecciona una mesa primero','var(--orange)');return;}
   var isBev=c===true||BEBS.indexOf(c)>=0;
   var o=getOrdenActiva();
-
+  if(!o){notice('Error: mesa sin orden activa','var(--red)');return;}
   var defP=o.numP===1?'p1':null;
   
   // BUSCAR SI EL PRODUCTO YA EXISTE EN LA ORDEN
@@ -4592,8 +4595,12 @@ function renderCobro(){
 }
 
 function renderPers(o,numP){
-  if(!o.pagosPP||o.pagosPP.length!==numP){o.pagosPP=[];}
-  if(o.pagosPP.length!==numP){o.pagosPP=[];}
+  if(!o.pagosPP) o.pagosPP=[];
+  if(o.pagosPP.length!==numP){
+    var prev=o.pagosPP.slice();
+    o.pagosPP=[];
+    for(var j=0;j<numP;j++) o.pagosPP[j]=prev[j]||{};
+  }
   for(var i=0;i<numP;i++){
     var pk='p'+(i+1),pt=calcP(o,pk);
     var prev=o.pagosPP[i]||{};
@@ -4677,7 +4684,7 @@ function togPC(pk){S.persAb=S.persAb===pk?null:pk;renderCobro();}
 function updM2(pk,v){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(pp)pp.monto=parseFloat(v)||0;var b=document.querySelector('#pc-'+pk+' .cobrapbtn');if(b&&pp)b.textContent='Cobrar '+fmt(pp.monto);}
 function setPP(pk,m){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(pp)pp.metodo=m;S.persAb=pk;renderCobro();}
 function cCP(pk,monto){var inp=gi('ef-'+pk),cv=gi('cv-'+pk),box=gi('cm-'+pk);if(!inp||!cv)return;var pc=parseFloat(inp.value)||0;cv.textContent=fmt(Math.max(0,pc-monto));if(box)box.className='cambmini'+(pc>monto?' on':'');}
-function cobP(pk){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(!pp||!pp.metodo){notice('Selecciona metodo de pago','var(--orange)');return;}pp.pagado=true;S.persAb=null;if(window.FB)window.FB.setOrden(S.cajaId,o);notice('Confirmado: '+PL[parseInt(pk.replace('p',''))-1]+' cobrado - '+fmt(pp.monto));renderCobro();}
+function cobP(pk){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(!pp||!pp.metodo){notice('Selecciona metodo de pago','var(--orange)');return;}if(pp.pagado)return;pp.pagado=true;S.persAb=null;if(window.FB)window.FB.setOrden(S.cajaId,o);notice('Confirmado: '+PL[parseInt(pk.replace('p',''))-1]+' cobrado - '+fmt(pp.monto));renderCobro();}
 
 function cerrarM(){
   var m=S.cajaId,o=S.ordenes[m];
@@ -4704,11 +4711,12 @@ function cerrarM(){
     }
   });
   var propinaTot=(o.pagosPP||[]).reduce(function(s,p){return s+(p.propina||0);},0);
-  var venta={mesa:m,nombreMesa:gN(parseInt(m)),sub:t.sub,desc:t.desc,total:t.total,propina:propinaTot,metodo:mf,metodos:ms,desglose:desglose,hora:nowT(),fecha:today(),timestamp:Date.now(),items:t.all,folio:f,mesero:meseroNombre};
+  var totalFinalM=parseFloat((t.total+propinaTot).toFixed(2));
+  var venta={mesa:m,nombreMesa:gN(parseInt(m)),sub:t.sub,desc:t.desc,total:totalFinalM,subtotalSinPropina:t.total,propina:propinaTot,metodo:mf,metodos:ms,desglose:desglose,hora:nowT(),fecha:today(),timestamp:Date.now(),items:t.all,folio:f,mesero:meseroNombre};
   S.ventas.push(venta);
   if(window.FB){window.FB.saveVenta(venta);window.FB.removeOrden(m);}
   delete S.ordenes[m];
-  delete _prevFbStatus[m];
+  delete window._prevFbStatus[m];
   // Activar orden en espera si existe
   if(S.colaEspera[m]){
     S.ordenes[m] = S.colaEspera[m];
@@ -4804,7 +4812,7 @@ function cobL(){
   S.ventas.push(venta);
   if(window.FB){window.FB.saveVenta(venta);window.FB.removeOrden(m);}
   delete S.ordenes[m];
-  delete _prevFbStatus[m];
+  delete window._prevFbStatus[m];
   S.cajaId=null;
   if(S.colaEspera[m]){
     S.ordenes[m]=S.colaEspera[m];
