@@ -2889,15 +2889,17 @@ _sub('ordenes', 'ordenes', function(snap) {
   updBadge();
 });
 
-// Ventas del día — para reporte
-_sub('ventas', 'ventas/' + today(), function(snap) {
-  var data = snap.val() || {};
-  S.ventas = Object.values(data);
-  updDia();
-  if (S.view === 'reporte') renderResumen();
-  if (S.view === 'dashboard') renderDashboard();
-  if (S.view === 'corte' && gi('cp-auto') && gi('cp-auto').style.display !== 'none') renderCorteAuto();
-});
+// Ventas del día — solo para roles que las necesitan
+if(window._rolActual === 'caja' || window._rolActual === 'admin') {
+  _sub('ventas', 'ventas/' + today(), function(snap) {
+    var data = snap.val() || {};
+    S.ventas = Object.values(data);
+    updDia();
+    if (S.view === 'reporte') renderResumen();
+    if (S.view === 'dashboard') renderDashboard();
+    if (S.view === 'corte' && gi('cp-auto') && gi('cp-auto').style.display !== 'none') renderCorteAuto();
+  });
+}
 
 // Nombres de mesas
 _sub('config_mesas', 'config/mesas', function(snap) {
@@ -2935,28 +2937,33 @@ window.FB = {
 };
 
 function _iniciarConfigSubs(){
-  _sub('config_nomina', 'config/nomina', function(snap) { if(snap.val()) S.nomina = snap.val(); });
-  _sub('config_reinversion', 'config/reinversion', function(snap) { if(snap.val()) S.reinversion = snap.val(); });
-  _sub('config_costos2', 'config/costos2', function(snap) {
-    if(snap.val()){
-      S.costos2 = snap.val();
-      Object.keys(S.costos2).forEach(function(k){CST[k]=S.costos2[k];});
-    }
-  });
-  _sub('config_ingredientes', 'config/ingredientes', function(snap) {
-    if(snap.val()) S.ingredientes = snap.val();
-  });
-  _sub('config_recetas', 'config/recetas', function(snap) {
-    if(snap.val()) S.recetas = snap.val();
-  });
-  _sub('config_semanas_archivadas', 'config/semanas_archivadas', function(snap) {
-    if(snap.val()) S.semanasArchivadas = snap.val();
-  });
-  _sub('cortes', 'cortes', function(snap) { S.cortesHistorial = snap.val() || {}; });
-  var semKey = new Date().toISOString().slice(0,10);
-  _sub('config_compras', 'config/compras_' + semKey, function(snap) {
-    if(snap.val()) S.compras = snap.val();
-  });
+  var rol = window._rolActual;
+  if(rol === 'caja' || rol === 'admin') {
+    _sub('cortes', 'cortes', function(snap) { S.cortesHistorial = snap.val() || {}; });
+  }
+  if(rol === 'admin') {
+    _sub('config_nomina', 'config/nomina', function(snap) { if(snap.val()) S.nomina = snap.val(); });
+    _sub('config_reinversion', 'config/reinversion', function(snap) { if(snap.val()) S.reinversion = snap.val(); });
+    _sub('config_costos2', 'config/costos2', function(snap) {
+      if(snap.val()){
+        S.costos2 = snap.val();
+        Object.keys(S.costos2).forEach(function(k){CST[k]=S.costos2[k];});
+      }
+    });
+    _sub('config_ingredientes', 'config/ingredientes', function(snap) {
+      if(snap.val()) S.ingredientes = snap.val();
+    });
+    _sub('config_recetas', 'config/recetas', function(snap) {
+      if(snap.val()) S.recetas = snap.val();
+    });
+    _sub('config_semanas_archivadas', 'config/semanas_archivadas', function(snap) {
+      if(snap.val()) S.semanasArchivadas = snap.val();
+    });
+    var semKey = new Date().toISOString().slice(0,10);
+    _sub('config_compras', 'config/compras_' + semKey, function(snap) {
+      if(snap.val()) S.compras = snap.val();
+    });
+  }
 }
 
 window.setSyncStatus('on');
@@ -3389,6 +3396,20 @@ setInterval(saveState, 10000);
 
 // Guardar antes de cerrar la ventana
 window.addEventListener('beforeunload', saveState);
+
+// Persistencia offline: guardar al perder conexión, re-sincronizar al recuperarla
+window.addEventListener('offline', function(){
+  window.setSyncStatus('off');
+  saveState();
+});
+window.addEventListener('online', function(){
+  window.setSyncStatus('syncing');
+  if(window.FB){
+    Object.keys(S.ordenes).forEach(function(m){
+      window.FB.setOrden(parseInt(m), S.ordenes[m]);
+    });
+  }
+});
 
 // ─── VALIDACIONES EN CAJA ────────────────────────────────────
 function validarAntesCobrar(mesaId){
