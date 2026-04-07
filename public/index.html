@@ -4262,6 +4262,7 @@ function confirmarNota(){
   }
   setNota(_notaIdx,nota);
   cerrarModalNota();
+  if(window.FB&&S.mesa) window.FB.setOrden(S.mesa, S._mesaEnEspera ? S.colaEspera[S.mesa] : S.ordenes[S.mesa]);
   renderTicket();
 }
 
@@ -4401,22 +4402,24 @@ function cambiarMesero(){
 }
 
 function renderBevs(){
-  var o=S.mesa?S.ordenes[S.mesa]:null;
+  var o=S.mesa?getOrdenActiva():null;
   var sec=gi('bevsec');
   if(!o||!o.bebP||o.bebP.length===0){sec.style.display='none';return;}
   gi('bcnt').textContent=o.bebP.filter(function(b){return !b.done;}).length;
   sec.style.display='block';
   var html='';
   o.bebP.forEach(function(b,i){
-    html+='<div class="bevrow'+(b.done?' done':'')+'"><div class="bevqty">'+b.qty+'</div><div class="bevname">'+b.n+'</div><div class="bevchk'+(b.done?' done':'')+'" onclick="togBev('+i+')">'+(b.done?'OK':'')+'</div></div>';
+    html+='<div class="bevrow'+(b.done?' done':'')+'"><div class="bevqty">'+b.qty+'</div><div class="bevname">'+esc(b.n)+'</div><div class="bevchk'+(b.done?' done':'')+'" onclick="togBev('+i+')">'+(b.done?'OK':'')+'</div></div>';
   });
   gi('bevlist').innerHTML=html;
 }
 function togBev(i){
-  if(!S.mesa||!S.ordenes[S.mesa])return;
-  S.ordenes[S.mesa].bebP[i].done=!S.ordenes[S.mesa].bebP[i].done;
+  if(!S.mesa)return;
+  var o=getOrdenActiva();
+  if(!o||!o.bebP[i])return;
+  o.bebP[i].done=!o.bebP[i].done;
   renderBevs();
-  if(window.FB)window.FB.setOrden(S.mesa,S.ordenes[S.mesa]);
+  if(window.FB)window.FB.setOrden(S.mesa, S._mesaEnEspera ? S.colaEspera[S.mesa] : S.ordenes[S.mesa]);
 }
 
 function enviar(){
@@ -4462,13 +4465,23 @@ function enviar(){
 
 function cancelar(){
   if(!S.mesa)return;
-  var o=S.ordenes[S.mesa];
-  if(o&&((o.items&&o.items.length>0)||(o.bebP&&o.bebP.length>0))&&!confirm('¿Cancelar orden de '+gN(S.mesa)+'?'))return;
-  if(window.FB)window.FB.removeOrden(S.mesa);
-  delete S.ordenes[S.mesa];S.mesa=null;
+  var m=S.mesa;
+  if(S._mesaEnEspera){
+    if(!confirm('¿Cancelar orden en espera de '+gN(m)+'?'))return;
+    delete S.colaEspera[m];
+    S._mesaEnEspera=false;S.mesa=null;
+    gi('mesero-bar').style.display='none';gi('bevsec').style.display='none';
+    updSbar();renderMesas();renderTicket();
+    return;
+  }
+  var o=S.ordenes[m];
+  if(o&&((o.items&&o.items.length>0)||(o.bebP&&o.bebP.length>0))&&!confirm('¿Cancelar orden de '+gN(m)+'?'))return;
+  if(window.FB)window.FB.removeOrden(m);
+  delete S.ordenes[m];delete S.colaEspera[m];
+  S._mesaEnEspera=false;S.mesa=null;
   gi('mesero-bar').style.display='none';gi('bevsec').style.display='none';
   updSbar();renderMesas();renderTicket();
-  saveState(); // Guardar después de cancelar
+  saveState();
 }
 
 // Cocina
@@ -4481,7 +4494,7 @@ function renderKDS(){
     var k=entry[0],o=entry[1];
     var s=o.ts?eSec(o.ts):0,cl=tcl(s);
     var nom=gN(parseInt(k));
-    var items=o.kdsItems||[];
+    var items=Array.isArray(o.kdsItems)?o.kdsItems:o.kdsItems?Object.values(o.kdsItems):[];
     var esLista = o.status==='lista';
     html+='<div class="kcard t-'+cl+(esLista?' s-lista':'')+'" id="kc-'+k+'">'+
       '<div class="kh t-'+cl+'" id="kh-'+k+'"><div><div class="km">'+nom+'</div><div class="kme">'+(o.hora||'')+'</div></div>'+
@@ -4550,7 +4563,7 @@ function renderCaja(){
     var m=entry[0],o=entry[1],t=calcT(o);
     var badge=o.status==='lista'?'🟢 Lista':o.status==='en_caja'?'✅ Servida':o.status==='en_cocina'||o.status==='preparando'?'🟡 En cocina':'🔵 Abierta';
     var all=t.all;
-    var items3=all.slice(0,3).map(function(i){return i.qty+'x '+i.n;}).join('<br>');
+    var items3=all.slice(0,3).map(function(i){return i.qty+'x '+esc(i.n);}).join('<br>');
     if(all.length>3)items3+='<br>+...'+(all.length-3)+' mas';
     html+='<div class="pcard'+(S.cajaId==m?' sel':'')+'" onclick="selCobro('+m+')"><div class="pch"><div class="pm">'+gN(parseInt(m))+'</div><div class="pt">'+badge+'</div></div><div class="pcb"><div class="pcitems">'+items3+'</div><div class="pctotal">'+fmt(t.total)+'</div></div></div>';
   });
@@ -4595,7 +4608,7 @@ function renderPers(o,numP){
     var pk='p'+(i+1),col=PC[i],pt=calcP(o,pk),isO=S.persAb===pk;
     var sug=PROPINA_SUGERENCIAS.map(function(pct){return{label:pct+'%',valor:Math.round(pt.total*pct/100)};});
     html+='<div class="pcard2'+(pp.pagado?' pagada':isO?' activa':'')+'" id="pc-'+pk+'"><div class="p2h" onclick="togPC(\''+pk+'\')"><div class="p2col" style="background:'+col+'"></div><span class="p2nom">'+PL[i]+'</span><span class="p2sub">'+fmt(pp.monto)+'</span><span class="p2st '+(pp.pagado?'pag':'pend')+'">'+(pp.pagado?'Pagado':'Pendiente')+'</span></div><div class="p2body'+(isO?' open':'')+'"><div class="p2items">';
-    if(pt.items.length){pt.items.forEach(function(it){html+='<div class="p2irow"><span>'+it.qty+'x '+it.n+'</span><span>'+fmt(it.p*it.qty)+'</span></div>';});}
+    if(pt.items.length){pt.items.forEach(function(it){html+='<div class="p2irow"><span>'+it.qty+'x '+esc(it.n)+'</span><span>'+fmt(it.p*it.qty)+'</span></div>';});}
     else html+='<div style="font-size:11px;color:var(--ink3);font-style:italic;padding:4px 0">Sin platillos asignados</div>';
     if(shT>0)html+='<div class="p2irow" style="color:var(--ink3)"><span>Compartido proporcional</span><span>'+fmt(shT/numP)+'</span></div>';
     // Propina individual
@@ -4621,7 +4634,7 @@ function renderPers(o,numP){
 function renderLibre(o,sub,desc,total){
   var all=Array.isArray(o.items)?o.items:o.items?Object.values(o.items):[],mp=o.metodoLibre;
   var html='<div class="librecard"><div class="stitle">Resumen</div><div class="libreitems">';
-  all.forEach(function(i){html+='<div class="lcrow"><span>'+i.qty+'x '+i.n+'</span><span>'+fmt(i.p*i.qty)+'</span></div>';});
+  all.forEach(function(i){html+='<div class="lcrow"><span>'+i.qty+'x '+esc(i.n)+'</span><span>'+fmt(i.p*i.qty)+'</span></div>';});
   html+='</div><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;border-top:1.5px solid var(--ink);padding-top:8px;margin-top:4px"><span>Total</span><span>'+fmt(total)+'</span></div></div>';
   html+='<div class="desccard"><div class="stitle">Descuento</div><div class="dtypes"><div class="dtype'+(o.descTipo==='pct'?' on':'')+'" onclick="sDT(\'pct\')">% Pct</div><div class="dtype'+(o.descTipo==='monto'?' on':'')+'" onclick="sDT(\'monto\')">$ Fijo</div><div class="dtype'+(!o.descTipo?' on':'')+'" onclick="sDT(null)">Sin desc.</div></div><div class="dirow"'+(!o.descTipo?' style="display:none"':'')+'><input type="number" value="'+(o.descVal||'')+'" placeholder="'+(o.descTipo==='pct'?'10':'50')+'" oninput="aDsc(this.value)"><span style="font-size:13px;color:var(--ink3)">'+(o.descTipo==='pct'?'%':'$')+'</span></div></div>';
   html+='<div><div class="stitle">Metodo de pago</div><div class="metodos"><div class="metodo'+(mp==='efectivo'?' on':'')+'" onclick="sML(\'efectivo\')"><span class="mi"></span>Efectivo</div><div class="metodo'+(mp==='tarjeta'?' on':'')+'" onclick="sML(\'tarjeta\')"><span class="mi"></span>Tarjeta</div><div class="metodo'+(mp==='transferencia'?' on':'')+'" onclick="sML(\'transferencia\')"><span class="mi"></span>Transfer.</div></div></div>';
