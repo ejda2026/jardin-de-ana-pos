@@ -3755,7 +3755,7 @@ function V(v){
     var admBtn2 = gi('ct-adm');
     if(admBtn2) admBtn2.style.display = (S.rolActual==='admin') ? 'block' : 'none';
     var btnLimpiar = gi('btn-limpiar-pruebas');
-    if(btnLimpiar) btnLimpiar.style.display = (S.rolActual==='admin') ? 'inline-block' : 'none';
+    if(btnLimpiar) btnLimpiar.style.display = (window._rolActual==='admin') ? 'inline-block' : 'none';
     if(S.rolActual==='admin'){
       setCorteTab('adm'); // Admin ve historial directo
     } else {
