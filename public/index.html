@@ -2978,6 +2978,22 @@ window.FB = {
   },
   unlockMesa: function(mesaNum){
     return syncUpdate('ordenes/'+mesaNum, {editando:null, editandoTs:null});
+  },
+  limpiarDatosPrueba: async function(){
+    if(!confirm('¿Eliminar TODOS los datos de prueba? (ordenes, ventas, cortes)\n\nLa configuración (cuentas a pagar, nómina, costos) NO se toca.')) return;
+    try {
+      await remove(ref(db, 'ordenes'));
+      await remove(ref(db, 'ventas'));
+      await remove(ref(db, 'cortes'));
+      localStorage.removeItem('jda_state');
+      localStorage.removeItem('jda_folio');
+      if(window.clearAppState) window.clearAppState();
+      alert('Listo. Datos de prueba eliminados. La configuración quedó intacta.');
+      location.reload();
+    } catch(e) {
+      alert('Error al limpiar: ' + e.message);
+      console.error(e);
+    }
   }
 };
 
