@@ -3643,9 +3643,9 @@ function getTG(){
   var e=S.gastosExtras.reduce(function(s,g){return s+(parseFloat(g.m)||0);},0);
   return f+e;
 }
-function getTC(){
+function getTC(ventas){
   var t=0;
-  S.ventas.forEach(function(v){(v.items||[]).forEach(function(it){t+=(CST[it.n]||0)*it.qty;});});
+  (ventas||S.ventas).forEach(function(v){(v.items||[]).forEach(function(it){t+=(CST[it.n]||0)*it.qty;});});
   return t;
 }
 
@@ -5699,7 +5699,7 @@ function renderResumen(){
   var v=getEvVentas();
   var vN=v.reduce(function(s,x){return s+x.total;},0);
   var cnt=v.length, avg=cnt?vN/cnt:0;
-  var tC=getTC();
+  var tC=getTC(v);
   var ganancia=vN-tC;
   var margen=vN>0?(ganancia/vN*100).toFixed(1):0;
 
@@ -5888,7 +5888,7 @@ function renderEvCharts(periodoData, depMap, ef, tj, tr){
     if(evChartBarras)evChartBarras.destroy();
     var labels=periodoData.map(function(p){return p.label;});
     var vtaData=periodoData.map(function(p){return p.vta;});
-    var ganData=periodoData.map(function(p){return Math.max(0,p.vta-getTC()/Math.max(periodoData.length,1));});
+    var ganData=periodoData.map(function(p){return Math.max(0,p.vta-(tC/Math.max(periodoData.length,1)));});
     evChartBarras=new Chart(ctxB,{
       type:'bar',
       data:{
@@ -6364,7 +6364,12 @@ function guardarReinversion(){
 // ════ SEMANAL ════════════════════════════════════════════════════
 function renderSemanal(){
   var hist = S.cortesHistorial || {};
-  var keys = Object.keys(hist).sort();
+  var hoyD=new Date();
+  var lunes=new Date(hoyD);lunes.setDate(hoyD.getDate()-((hoyD.getDay()+6)%7));lunes.setHours(0,0,0,0);
+  var domingo=new Date(lunes);domingo.setDate(lunes.getDate()+6);domingo.setHours(23,59,59,999);
+  var lunesKey=lunes.toISOString().slice(0,10);
+  var domingoKey=domingo.toISOString().slice(0,10);
+  var keys = Object.keys(hist).filter(function(k){return k>=lunesKey&&k<=domingoKey;}).sort();
   var dias = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
 
   var totEf=0,totTj=0,totTr=0,totGas=0,totVta=0,totPers=0,totProp=0;
@@ -7751,7 +7756,7 @@ function renderCorteAdmin() {
       '<span class="hc-tag '+(ut>0?'ok':ut<0?'mal':'cero')+'">'+(ut>0?'Positivo':ut<0?'Negativo':'Sin datos')+'</span>'+
       '<div class="hc-vals">'+
         '<span>Ventas: <strong>'+fmt(vta)+'</strong></span>'+
-        '<span>Gastos: <strong>'+fmt(d.resumen.gastos||0)+'</strong></span>'+
+        '<span>Gastos: <strong>'+fmt(gas)+'</strong></span>'+
       '</div>'+
       '<div class="hc-total">'+fmt(ut)+'</div>'+
       '</div>';
