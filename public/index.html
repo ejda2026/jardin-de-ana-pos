@@ -2122,6 +2122,7 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
         <button class="rbtn sec on" id="ct-cap" onclick="setCorteTab('cap')">Capturar</button>
         <button class="rbtn sec" id="ct-adm" onclick="setCorteTab('adm')">📊 Admin</button>
         <button class="rbtn sec" id="ct-auto" onclick="setCorteTab('auto')" style="display:none">🔒 Automático</button>
+        <button id="btn-limpiar-pruebas" onclick="window.FB&&window.FB.limpiarDatosPrueba()" style="display:none;padding:6px 12px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:11px;cursor:pointer;font-weight:600">🗑 Limpiar datos de prueba</button>
       </div>
     </div>
 
@@ -3753,6 +3754,8 @@ function V(v){
   if(v==='corte'){
     var admBtn2 = gi('ct-adm');
     if(admBtn2) admBtn2.style.display = (S.rolActual==='admin') ? 'block' : 'none';
+    var btnLimpiar = gi('btn-limpiar-pruebas');
+    if(btnLimpiar) btnLimpiar.style.display = (S.rolActual==='admin') ? 'inline-block' : 'none';
     if(S.rolActual==='admin'){
       setCorteTab('adm'); // Admin ve historial directo
     } else {
