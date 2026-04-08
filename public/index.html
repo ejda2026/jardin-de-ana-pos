@@ -2972,6 +2972,12 @@ window.FB = {
     return get(ref(db, 'ventas/'+fecha)).then(function(snap){
       return snap.exists() ? Object.values(snap.val()) : [];
     });
+  },
+  lockMesa: function(mesaNum, deviceId){
+    return syncUpdate('ordenes/'+mesaNum, {editando:deviceId, editandoTs:Date.now()});
+  },
+  unlockMesa: function(mesaNum){
+    return syncUpdate('ordenes/'+mesaNum, {editando:null, editandoTs:null});
   }
 };
 
@@ -3442,10 +3448,23 @@ function loadState(){
 }
 
 window.clearAppState = function(){
+  if(S.mesa && window.FB) window.FB.unlockMesa(S.mesa);
   S.mesa=null; S.cajaId=null; S._mesaEnEspera=false;
   S.ordenes={}; S.colaEspera={}; S.ventas=[];
   S_ventasEv=null;
 };
+
+var _deviceId = Date.now().toString(36).slice(-4).toUpperCase()+Math.random().toString(36).slice(2,4).toUpperCase();
+var _LOCK_TTL = 5*60*1000;
+
+function _liberarMesaLock(m){
+  if(!m || !S.ordenes[m]) return;
+  if(S.ordenes[m].editando === _deviceId){
+    if(window.FB) window.FB.unlockMesa(m);
+    delete S.ordenes[m].editando;
+    delete S.ordenes[m].editandoTs;
+  }
+}
 
 // Auto-guardar cada 10 segundos
 setInterval(saveState, 10000);
@@ -3784,8 +3803,11 @@ function irAMesaNotif(){
   var m = parseInt(gi('notif-modal').dataset.mesa);
   cerrarNotifModal();
   if(m && S.ordenes[m]){
+    if(S.mesa && S.mesa!==m) _liberarMesaLock(S.mesa);
     delete S.notifM[m];
     if(window._prevFbStatus) window._prevFbStatus[m] = 'lista';
+    if(window.FB) window.FB.lockMesa(m,_deviceId);
+    S.ordenes[m].editando=_deviceId; S.ordenes[m].editandoTs=Date.now();
     S.mesa = m;
     gi('mesero-bar').style.display='flex';
     updSbar();renderTicket();renderMesas();updBadge();
@@ -4035,6 +4057,21 @@ function renderMesas(){
 }
 
 function selMesa(n){
+  // Liberar lock de mesa anterior si se cambia
+  if(S.mesa && S.mesa!==n && !S._mesaEnEspera) _liberarMesaLock(S.mesa);
+
+  // Verificar lock de la mesa destino
+  if(S.ordenes[n] && S.ordenes[n].editando && S.ordenes[n].editando!==_deviceId){
+    var lockEdad=Date.now()-(S.ordenes[n].editandoTs||0);
+    if(lockEdad<_LOCK_TTL){ notice('Otro mesero está editando esta mesa','var(--orange)'); return; }
+  }
+
+  // Adquirir lock si la orden existe y no está en_caja
+  if(S.ordenes[n] && S.ordenes[n].status!=='en_caja'){
+    S.ordenes[n].editando=_deviceId; S.ordenes[n].editandoTs=Date.now();
+    if(window.FB) window.FB.lockMesa(n,_deviceId);
+  }
+
   // Si la orden está en_caja: permitir crear orden en cola de espera
   if(S.ordenes[n] && S.ordenes[n].status==='en_caja'){
     if(S.colaEspera[n]){
@@ -4134,6 +4171,7 @@ function entregarMesa(){
   // pero siga apareciendo en Caja
   S.ordenes[mesaNum].status='en_caja';
   if(window.FB)window.FB.updateOrden(mesaNum,{status:'en_caja'});
+  _liberarMesaLock(mesaNum);
   delete S.notifM[mesaNum];
   S.mesa=null;
   gi('mesero-bar').style.display='none';
@@ -4555,6 +4593,7 @@ function cancelar(){
   }
   var o=S.ordenes[m];
   if(o&&((o.items&&o.items.length>0)||(o.bebP&&o.bebP.length>0))&&!confirm('¿Cancelar orden de '+gN(m)+'?'))return;
+  _liberarMesaLock(m);
   if(window.FB)window.FB.removeOrden(m);
   delete S.ordenes[m];delete S.colaEspera[m];
   S._mesaEnEspera=false;S.mesa=null;
