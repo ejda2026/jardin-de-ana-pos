@@ -2965,6 +2965,11 @@ window.FB = {
   },
   saveNumMesas: function(n){
     return syncSet('config/numMesas', n);
+  },
+  getVentasFecha: function(fecha){
+    return get(ref(db, 'ventas/'+fecha)).then(function(snap){
+      return snap.exists() ? Object.values(snap.val()) : [];
+    });
   }
 };
 
@@ -3695,7 +3700,7 @@ function V(v){
   if(v==='mesero'){updBadge();renderMesas();renderMenu();}
   if(v==='cocina')renderKDS();
   if(v==='caja')renderCaja();
-  if(v==='reporte')renderReporte();
+  if(v==='reporte'){S_ventasEv=null;_cargarVentasParaTab().then(function(){renderReporte();});}
   if(v==='dashboard'){renderDashboard();startDashTimer();}
   if(v==='ingredientes')renderIngCostos();
   if(v==='corte'){
@@ -5611,20 +5616,9 @@ var DEPTOS = {
   'Postres':       {label:'POSTRES',   color:'#6a1b9a'}
 };
 
-function setEvTab(t){
-  evTab=t;
-  ['sem','mes','ant','ano','per'].forEach(function(x){
-    var b=gi('evt-'+x);if(b)b.classList.toggle('on',x===t);
-  });
-  var perBox=gi('ev-periodo-box');
-  if(perBox)perBox.style.display=t==='per'?'flex':'none';
-  renderResumen();
-}
-
-function getEvVentas(){
-  // Filtrar ventas según el tab seleccionado
+function _calcEvRango(){
   var hoy=new Date();
-  var desde, hasta;
+  var desde,hasta;
   if(evTab==='sem'){
     desde=new Date(hoy);desde.setDate(hoy.getDate()-((hoy.getDay()+6)%7));desde.setHours(0,0,0,0);
     hasta=new Date(desde);hasta.setDate(desde.getDate()+6);hasta.setHours(23,59,59,999);
@@ -5642,12 +5636,49 @@ function getEvVentas(){
     desde=d&&d.value?new Date(d.value+'T00:00:00'):new Date(0);
     hasta=h&&h.value?new Date(h.value+'T23:59:59'):new Date();
   }
-  // Filtrar ventas por rango de fechas calculado arriba
-  if(!desde || !hasta) return S.ventas;
-  return S.ventas.filter(function(v){
-    var ts = v.ts ? new Date(v.ts) : null;
-    if(!ts) return true; // sin timestamp, incluir
-    return ts >= desde && ts <= hasta;
+  return {desde:desde,hasta:hasta};
+}
+
+var S_ventasEv = null;
+
+function setEvTab(t){
+  evTab=t;
+  S_ventasEv=null;
+  ['sem','mes','ant','ano','per'].forEach(function(x){
+    var b=gi('evt-'+x);if(b)b.classList.toggle('on',x===t);
+  });
+  var perBox=gi('ev-periodo-box');
+  if(perBox)perBox.style.display=t==='per'?'flex':'none';
+  _cargarVentasParaTab().then(function(){ renderResumen(); });
+}
+
+function _cargarVentasParaTab(){
+  if(!window.FB||!window.FB.getVentasFecha) return Promise.resolve();
+  var rango=_calcEvRango();
+  if(!rango.desde||!rango.hasta){S_ventasEv=null;return Promise.resolve();}
+  var fechas=[];
+  var todayKey=today();
+  var d=new Date(rango.desde);
+  while(d<=rango.hasta){
+    var k=d.toISOString().slice(0,10);
+    if(k!==todayKey) fechas.push(k);
+    d.setDate(d.getDate()+1);
+  }
+  return Promise.all(fechas.map(function(f){return window.FB.getVentasFecha(f);}))
+    .then(function(results){
+      S_ventasEv=S.ventas.slice();
+      results.forEach(function(arr){arr.forEach(function(v){S_ventasEv.push(v);});});
+    });
+}
+
+function getEvVentas(){
+  var base=S_ventasEv||S.ventas;
+  var rango=_calcEvRango();
+  if(!rango.desde||!rango.hasta) return base;
+  return base.filter(function(v){
+    var ts=v.timestamp?new Date(v.timestamp):null;
+    if(!ts) return true;
+    return ts>=rango.desde&&ts<=rango.hasta;
   });
 }
 
