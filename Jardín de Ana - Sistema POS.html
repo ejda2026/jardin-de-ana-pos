@@ -5037,7 +5037,16 @@ function renderPers(o,numP){
       '<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--ink3)">Propina</span><span style="color:var(--gold)">'+fmt(pp.propina||0)+'</span></div>'+
       '<div style="display:flex;justify-content:space-between;font-weight:700;border-top:1px solid var(--cream3);padding-top:4px;margin-top:2px"><span>Total</span><span style="font-family:\'Playfair Display\',serif;font-size:15px">'+fmt(pp.monto)+'</span></div>'+
     '</div><div class="pagoarea"><div class="stitle">Metodo de pago</div><div class="mminis"><div class="mmini'+(pp.metodo==='efectivo'?' on':'')+'" onclick="setPP(\''+pk+'\',\'efectivo\')"><span class="mi"></span>Efectivo</div><div class="mmini'+(pp.metodo==='tarjeta'?' on':'')+'" onclick="setPP(\''+pk+'\',\'tarjeta\')"><span class="mi"></span>Tarjeta</div><div class="mmini'+(pp.metodo==='transferencia'?' on':'')+'" onclick="setPP(\''+pk+'\',\'transferencia\')"><span class="mi"></span>Transfer.</div></div>';
-    if(pp.metodo==='efectivo'){html+='<div class="montrow"><span class="ml">Paga con</span><input class="montinput" type="number" id="ef-'+pk+'" placeholder="'+Math.ceil(pp.monto/10)*10+'" oninput="cCP(\''+pk+'\','+pp.monto+')"></div><div class="cambmini" id="cm-'+pk+'"><span style="font-size:10px;color:var(--green)">Cambio</span><span style="font-family:\'Playfair Display\',serif;font-size:14px;color:var(--green)" id="cv-'+pk+'">$0.00</span></div>';}
+    if(pp.metodo==='efectivo'){
+      var pb1=Math.ceil(pp.monto/100)*100,pb2=pb1+100,pb3=pb1+200;
+      html+='<div style="display:flex;gap:6px;margin:8px 0 4px">'+
+        '<button onclick="gi(\'ef-'+pk+'\').value='+pb1+';cCP(\''+pk+'\','+pp.monto+')" style="flex:1;padding:8px 4px;background:var(--cream2);border:1.5px solid var(--cream3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">$'+pb1+'</button>'+
+        '<button onclick="gi(\'ef-'+pk+'\').value='+pb2+';cCP(\''+pk+'\','+pp.monto+')" style="flex:1;padding:8px 4px;background:var(--cream2);border:1.5px solid var(--cream3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">$'+pb2+'</button>'+
+        '<button onclick="gi(\'ef-'+pk+'\').value='+pb3+';cCP(\''+pk+'\','+pp.monto+')" style="flex:1;padding:8px 4px;background:var(--cream2);border:1.5px solid var(--cream3);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">$'+pb3+'</button>'+
+      '</div>'+
+      '<div class="montrow"><span class="ml">Paga con</span><input class="montinput" type="number" id="ef-'+pk+'" placeholder="'+Math.ceil(pp.monto/10)*10+'" oninput="cCP(\''+pk+'\','+pp.monto+')"></div>'+
+      '<div class="cambmini" id="cm-'+pk+'"><span style="font-size:10px;color:var(--green)">Cambio</span><span style="font-family:\'Playfair Display\',serif;font-size:14px;color:var(--green)" id="cv-'+pk+'">$0.00</span></div>';
+    }
     html+='<button class="cobrapbtn" onclick="cobP(\''+pk+'\')" '+(pp.metodo?'':'disabled')+'>Cobrar '+fmt(pp.monto)+'</button></div></div></div>';
   });
   return html+'</div>';
