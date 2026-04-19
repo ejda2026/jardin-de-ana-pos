@@ -2793,11 +2793,13 @@ window._loginConPin = function(rol){
 };
 
 window.doLogout = function(){
-  if(window.clearAppState) window.clearAppState();
+  try{ if(window.clearAppState) window.clearAppState(); }catch(e){}
   window._rolActual = null;
   _subsActivos = false;
-  Object.keys(_unsubs).forEach(function(k){ if(_unsubs[k]) _unsubs[k](); });
-  _unsubs = {};
+  try{
+    Object.keys(_unsubs).forEach(function(k){ try{if(_unsubs[k])_unsubs[k]();}catch(e){} });
+    _unsubs = {};
+  }catch(e){ _unsubs={}; }
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-wrap').style.display = 'none';
 };
@@ -2915,7 +2917,7 @@ _sub('ordenes', 'ordenes', function(snap) {
       var esReciente = nueva && nueva.ts && (Date.now() - nueva.ts) < 30*60*1000;
       var esPrimeraVez = statusAnterior === null && esReciente;
       var miNombre = _miNombreMesero || '';
-      var esMiMesa = !miNombre || !nueva.mesero || nueva.mesero.toLowerCase()===miNombre.toLowerCase();
+      var esMiMesa = miNombre && nueva.mesero && nueva.mesero.toLowerCase()===miNombre.toLowerCase();
       if((esNueva || esPrimeraVez) && esMiMesa) {
         window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:mesaNum}}));
       }
@@ -2990,10 +2992,11 @@ _sub('ordenes', 'ordenes', function(snap) {
   renderMesas();
   renderBevs();
   updSbar();
-  renderCaja(); // siempre actualizar caja en tiempo real
+  renderCaja();
   if(S.cajaId && S.ordenes[S.cajaId]) renderCobro();
-  if (S.view === 'cocina') renderKDS();
-  if (S.view === 'dashboard') renderDashboard();
+  if(S.view === 'cocina') renderKDS();
+  if(S.view === 'dashboard') renderDashboard();
+  if(S.mesa && S.ordenes[S.mesa]) renderTicket();
   updBadge();
 });
 
@@ -3086,6 +3089,9 @@ window.FB = {
   saveCorte: function(fecha, data){
     return syncSet('cortes/'+fecha, data);
   },
+  saveFolio: function(n){
+    return syncSet('config/folio', n);
+  },
   saveNomina: function(nomina){
     return syncSet('config/nomina', nomina);
   },
@@ -3147,6 +3153,10 @@ function _iniciarConfigSubs(){
   });
   if(rol === 'caja' || rol === 'admin') {
     _sub('cortes', 'cortes', function(snap) { S.cortesHistorial = snap.val() || {}; });
+    _sub('config_folio', 'config/folio', function(snap){
+      var fb=parseInt(snap.val())||0;
+      if(fb>S.folio){S.folio=fb;localStorage.setItem('jda_folio',S.folio);}
+    });
   }
   if(rol === 'admin') {
     _sub('turnos_hoy', 'turnos/'+today(), function(snap) {
@@ -3631,14 +3641,25 @@ function loadState(){
 }
 
 window.clearAppState = function(){
-  if(S.mesa && window.FB) window.FB.unlockMesa(S.mesa);
+  try{ if(S.mesa && window.FB) window.FB.unlockMesa(S.mesa); }catch(e){}
   S.mesa=null; S.cajaId=null; S._mesaEnEspera=false;
   S.ordenes={}; S.colaEspera={}; S.ventas=[];
   S_ventasEv=null;
+  try{
+    Object.keys(_unsubs).forEach(function(k){ try{if(_unsubs[k])_unsubs[k]();}catch(e){} });
+    _unsubs = {};
+  }catch(e){ _unsubs={}; }
+  try{ _cerrandoM=false; _cobrandoL=false; _cobPProc={}; }catch(e){}
 };
 
 var _deviceId = Date.now().toString(36).slice(-4).toUpperCase()+Math.random().toString(36).slice(2,4).toUpperCase();
 var _LOCK_TTL = 5*60*1000;
+setInterval(function(){
+  if(S.mesa && S.ordenes[S.mesa] && S.ordenes[S.mesa].editando===_deviceId && window.FB){
+    S.ordenes[S.mesa].editandoTs=Date.now();
+    window.FB.lockMesa(S.mesa,_deviceId);
+  }
+},2*60*1000);
 
 function _liberarMesaLock(m){
   if(!m || !S.ordenes[m]) return;
@@ -3689,7 +3710,7 @@ function validarAntesCobrar(mesaId){
   return {ok: true};
 }
 
-var _sesionPfx=(function(){var t=Date.now().toString(36);return(t.slice(-1)+(Math.random()*36|0).toString(36)).toUpperCase();})();
+var _sesionPfx=(function(){var t=Date.now().toString(36);var r=Math.random().toString(36).slice(2,5);return(t.slice(-2)+r).toUpperCase().slice(0,4);})();
 var S={
   cat:'Todos',mesa:null,_mesaEnEspera:false,
   ordenes:{},
@@ -4805,10 +4826,11 @@ function enviar(){
   });
   // Solo los platillos nuevos (no bevidas) van a cocina
   if(kI.length>0){
-    var nuevosKds = kI.map(function(i){return{n:i.n,qty:i.qty,nota:i.nota||'',done:false,nuevo:true};});
     kI.forEach(function(i){i.enviado=true;});
     // Usar kdsItems de Firebase (fuente de verdad) para no pisar el progreso de cocina
     var kdsBase = window._fbKdsItems && window._fbKdsItems[S.mesa] ? window._fbKdsItems[S.mesa] : (o.kdsItems||[]);
+    var esSegundaOrden = kdsBase.length > 0;
+    var nuevosKds = kI.map(function(i){return{n:i.n,qty:i.qty,nota:i.nota||'',done:false,nuevo:esSegundaOrden};});
     o.kdsItems = kdsBase.concat(nuevosKds);
     o.status='en_cocina';
     o.ts=Date.now();
@@ -4854,8 +4876,8 @@ function cancelar(){
     return;
   }
   var stCan=S.ordenes[m]&&S.ordenes[m].status;
-  if(stCan==='en_cocina'||stCan==='preparando'||stCan==='lista'){
-    notice('La orden ya está en cocina — pide a cocina que la cancele','var(--red)');
+  if(stCan==='en_cocina'||stCan==='preparando'){
+    notice('La orden está siendo preparada — pide a cocina que la cancele','var(--red)');
     return;
   }
   _liberarMesaLock(m);
@@ -4923,7 +4945,6 @@ function kSt(k,st){
   if(st==='lista'){
     o.status='lista';
     descontarInventario(o);
-    window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:parseInt(k)}}));
     if(S.mesa===parseInt(k))updSbar();
     showToast('Orden lista — '+gN(parseInt(k)),'ok');
   } else if(st==='entregada_cocina'){
@@ -5150,20 +5171,36 @@ function togPC(pk){S.persAb=S.persAb===pk?null:pk;renderCobro();}
 function updM2(pk,v){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(pp)pp.monto=parseFloat(v)||0;var b=document.querySelector('#pc-'+pk+' .cobrapbtn');if(b&&pp)b.textContent='Cobrar '+fmt(pp.monto);}
 function setPP(pk,m){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(pp)pp.metodo=m;S.persAb=pk;renderCobro();}
 function cCP(pk,monto){var inp=gi('ef-'+pk),cv=gi('cv-'+pk),box=gi('cm-'+pk);if(!inp||!cv)return;var pc=parseFloat(inp.value)||0;cv.textContent=fmt(Math.max(0,pc-monto));if(box)box.className='cambmini'+(pc>monto?' on':'');}
-function cobP(pk){var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}if(!pp||!pp.metodo){notice('Selecciona metodo de pago','var(--orange)');return;}if(pp.pagado)return;pp.pagado=true;S.persAb=null;if(window.FB)window.FB.setOrden(S.cajaId,o);notice('Confirmado: '+PL[parseInt(pk.replace('p',''))-1]+' cobrado - '+fmt(pp.monto));renderCobro();}
+var _cobPProc={};
+function cobP(pk){
+  if(_cobPProc[pk])return;
+  var o=S.ordenes[S.cajaId];if(!o||!o.pagosPP)return;
+  var pp=null;for(var i=0;i<o.pagosPP.length;i++){if(o.pagosPP[i].persona===pk){pp=o.pagosPP[i];break;}}
+  if(!pp||!pp.metodo){notice('Selecciona metodo de pago','var(--orange)');return;}
+  if(pp.pagado)return;
+  _cobPProc[pk]=true;
+  pp.pagado=true;S.persAb=null;
+  if(window.FB)window.FB.setOrden(S.cajaId,o);
+  notice('Confirmado: '+PL[parseInt(pk.replace('p',''))-1]+' cobrado - '+fmt(pp.monto));
+  renderCobro();
+  setTimeout(function(){delete _cobPProc[pk];},3000);
+}
 
+var _cerrandoM=false;
 function cerrarM(){
+  if(_cerrandoM)return;
   var m=S.cajaId,o=S.ordenes[m];
+  if(!o){notice('La orden ya no existe','var(--red)');return;}
 
   var validacion = validarAntesCobrar(m);
   if(!validacion.ok){ notice(validacion.msg,'var(--red)'); return; }
 
-  // Validar que todas las personas estén cobradas
   if(o.pagosPP&&o.pagosPP.length>0){
     var sinPagar=o.pagosPP.filter(function(p){return !p.pagado;});
     if(sinPagar.length>0){ notice('Faltan '+sinPagar.length+' persona(s) por cobrar','var(--orange)'); return; }
   }
 
+  _cerrandoM=true;
   var t=calcT(o);
   var f=_sesionPfx+String(S.folio++).padStart(3,'0');
   var ms=[];
@@ -5182,6 +5219,7 @@ function cerrarM(){
   var venta={mesa:m,nombreMesa:gN(parseInt(m)),sub:t.sub,desc:t.desc,total:totalFinalM,subtotalSinPropina:t.total,propina:propinaTot,metodo:mf,metodos:ms,desglose:desglose,hora:nowT(),fecha:today(),timestamp:Date.now(),items:t.all,folio:f,mesero:meseroNombre};
   S.ventas.push(venta);
   var tieneEspera=!!S.colaEspera[m];
+  var ordenRespaldo=o;
   delete S.ordenes[m];
   delete window._prevFbStatus[m];
   if(S.colaEspera[m]){
@@ -5198,9 +5236,22 @@ function cerrarM(){
   if(window.FB){
     window.FB.saveVenta(venta)
       .then(function(){return window.FB.removeOrden(m);})
-      .then(function(){if(!tieneEspera)notice('Confirmado: '+gN(parseInt(m))+' cerrada - '+fmt(totalFinalM));})
-      .catch(function(){notice('Venta guardada en memoria. Error en servidor — no cerrar el browser.','var(--orange)');});
+      .then(function(){
+        _cerrandoM=false;
+        window.FB.saveFolio(S.folio);
+        if(!tieneEspera)notice('Confirmado: '+gN(parseInt(m))+' cerrada - '+fmt(totalFinalM));
+      })
+      .catch(function(){
+        _cerrandoM=false;
+        S.ventas.pop();
+        S.folio--;
+        if(!S.ordenes[m]){S.ordenes[m]=ordenRespaldo;S.cajaId=m;}
+        saveState();
+        notice('Error al guardar. La orden fue restaurada — intenta cobrar de nuevo.','var(--red)');
+        renderCaja();renderMesas();
+      });
   } else {
+    _cerrandoM=false;
     if(!tieneEspera) notice('Confirmado: '+gN(parseInt(m))+' cerrada - '+fmt(totalFinalM));
   }
 }
@@ -5297,8 +5348,11 @@ function setPropinaP(pk,valor){
   renderCobro();
 }
 
+var _cobrandoL=false;
 function cobL(){
+  if(_cobrandoL)return;
   var o=S.ordenes[S.cajaId];
+  if(!o){notice('La orden ya no existe','var(--red)');return;}
   if(!o.pagosCapturados)o.pagosCapturados=[];
   var pc=o.pagosCapturados;
   var t=calcT(o);
@@ -5318,6 +5372,10 @@ function cobL(){
     if(recibido>0&&recibido<efRow.monto){notice('Monto insuficiente en efectivo. Recibido: '+fmt(recibido),'var(--orange)');return;}
   }
 
+  _cobrandoL=true;
+  var cobBtn=document.getElementById('cobrar-btn-libre');
+  if(cobBtn)cobBtn.disabled=true;
+
   var metodosActivos=pc.map(function(p){return p.metodo;});
   var metodoStr=pc.length===1?pc[0].metodo:'mixto';
   var f=_sesionPfx+String(S.folio++).padStart(3,'0');
@@ -5334,6 +5392,7 @@ function cobL(){
   var venta={mesa:m,nombreMesa:gN(parseInt(m)),sub:t.sub,desc:t.desc,total:totalFinal,subtotalSinPropina:t.total,propina:propina,metodo:metodoStr,metodos:metodosActivos,desglose:desglosL,hora:nowT(),fecha:today(),timestamp:Date.now(),items:t.all,folio:f,mesero:meseroNombre};
   S.ventas.push(venta);
   var tieneEspera=!!S.colaEspera[m];
+  var ordenRespaldo=o;
   delete S.ordenes[m];
   delete window._prevFbStatus[m];
   S.cajaId=null;
@@ -5350,9 +5409,22 @@ function cobL(){
   if(window.FB){
     window.FB.saveVenta(venta)
       .then(function(){return window.FB.removeOrden(m);})
-      .then(function(){if(!tieneEspera)notice('Confirmado: '+gN(parseInt(m))+' cobrada - '+fmt(totalFinal)+(propina>0?' (incluye propina '+fmt(propina)+')':''));})
-      .catch(function(){notice('Venta guardada en memoria. Error en servidor — no cerrar el browser.','var(--orange)');});
+      .then(function(){
+        _cobrandoL=false;
+        window.FB.saveFolio(S.folio);
+        if(!tieneEspera)notice('Confirmado: '+gN(parseInt(m))+' cobrada - '+fmt(totalFinal)+(propina>0?' (incluye propina '+fmt(propina)+')':''));
+      })
+      .catch(function(){
+        _cobrandoL=false;
+        S.ventas.pop();
+        S.folio--;
+        if(!S.ordenes[m]){S.ordenes[m]=ordenRespaldo;S.cajaId=m;}
+        saveState();
+        notice('Error al guardar. La orden fue restaurada — intenta cobrar de nuevo.','var(--red)');
+        renderCaja();renderMesas();
+      });
   } else {
+    _cobrandoL=false;
     if(!tieneEspera) notice('Confirmado: '+gN(parseInt(m))+' cobrada - '+fmt(totalFinal));
   }
 }
@@ -5549,10 +5621,8 @@ var modState = {
 };
 
 function abrirModificadores(nombre, precio, esBev){
-  // Buscar el item en ME para obtener sus modificadores
   var item = ME.find(function(m){ return m.n === nombre; });
   if(!item || !item.mods) {
-    // Si no tiene modificadores, agregar directo
     addItem(nombre, precio, esBev);
     return;
   }
@@ -5793,9 +5863,13 @@ function agregarConModificadores(){
   precioTotal += _modExtras.length * 15;
 
   var nota = (gi('mod-nota-input').value||'').trim();
+  if(modificaciones.length>0){
+    var modTxt=modificaciones.join(', ');
+    nota=nota?modTxt+'. '+nota:modTxt;
+  }
   if(_modExtras.length>0){
     var extTxt='Extra: '+_modExtras.join(', ');
-    nota=nota?extTxt+'. '+nota:extTxt;
+    nota=nota?nota+'. '+extTxt:extTxt;
   }
 
   if(itemExistente){
