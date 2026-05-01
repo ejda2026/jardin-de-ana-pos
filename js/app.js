@@ -1332,6 +1332,7 @@ function chQ(idx,d){
   if(!S.mesa)return;
   var o=getOrdenActiva();
   if(!o)return;
+  if(o.items[idx].enviado){showToast('Ya fue enviado a cocina','var(--orange)');return;}
   o.items[idx].qty+=d;
   if(o.items[idx].qty<=0)o.items.splice(idx,1);
   if(window.FB){ if(S._mesaEnEspera) window.FB.saveEspera(S.mesa,S.colaEspera[S.mesa]); else window.FB.updateOrden(S.mesa,{items:o.items,bebP:o.bebP}); }
@@ -1544,9 +1545,12 @@ function renderTicket(){
       btns+='<button onclick="setP2('+idx+',null)" style="padding:3px 8px;border:1px solid '+(isAll?'transparent':'var(--cream3)')+';border-radius:12px;font-size:10px;cursor:pointer;background:'+(isAll?'var(--ink)':'var(--cream2)')+';color:'+(isAll?'#fff':'var(--ink3)')+'">Todos</button>';
       sel='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">'+btns+'</div>';
     }
-    html+='<div class="tki'+(it.esBev?' bev':'')+'"><div class="tki-top"><span class="itype '+(it.esBev?'b':'k')+'"></span><div class="iname">'+esc(it.n)+
+    var qctrl=it.enviado
+      ?'<div class="qctrl"><span class="qn" style="padding:0 8px">'+it.qty+'x</span></div>'
+      :'<div class="qctrl"><button class="qb" onclick="chQ('+idx+',-1)">−</button><span class="qn">'+it.qty+'</span><button class="qb" onclick="chQ('+idx+',1)">+</button></div><button class="delb" onclick="delI('+idx+')">×</button>';
+    html+='<div class="tki'+(it.esBev?' bev':'')+(it.enviado?' enviado':'')+'"><div class="tki-top"><span class="itype '+(it.esBev?'b':'k')+'"></span><div class="iname">'+esc(it.n)+
       (it.modificaciones?'<div style="font-size:10px;color:var(--ink3);margin-top:2px;font-weight:400">'+esc(it.modificaciones)+'</div>':'')+
-      '</div><div class="iprice">'+fmt(it.p)+'</div><div class="qctrl"><button class="qb" onclick="chQ('+idx+',-1)">−</button><span class="qn">'+it.qty+'</span><button class="qb" onclick="chQ('+idx+',1)">+</button></div><button class="delb" onclick="delI('+idx+')">×</button></div>'+
+      '</div><div class="iprice">'+fmt(it.p)+'</div>'+qctrl+'</div>'+
       (it.nota?'<div style="font-size:10px;color:var(--ink3);padding:4px 8px;border-top:1px solid var(--cream3);cursor:pointer" onclick="abrirModalNota('+idx+')">📝 '+esc(it.nota)+'</div>':'<div style="font-size:10px;color:var(--cream3);padding:3px 8px;border-top:1px solid var(--cream3);cursor:pointer" onclick="abrirModalNota('+idx+')">+ Agregar nota</div>')+
       sel+'</div>';
   });
@@ -2540,22 +2544,37 @@ function abrirModificadores(nombre, precio, esBev){
 
 function toggleExtra(idx){
   var extra = modState.itemMods.extras[idx];
+  var esSalsa = modState.itemMods.extrasLabel === 'Salsa';
   var pos = modState.extrasSeleccionados.indexOf(idx);
-  
-  if(pos >= 0){
-    // Deseleccionar
-    modState.extrasSeleccionados.splice(pos, 1);
-    gi('extra-'+idx).style.borderColor = 'var(--cream3)';
-    gi('extra-'+idx).style.background = 'var(--cream)';
-    gi('extra-check-'+idx).style.background = 'transparent';
+
+  if(esSalsa){
+    modState.extrasSeleccionados.forEach(function(i){
+      gi('extra-'+i).style.borderColor='var(--cream3)';
+      gi('extra-'+i).style.background='var(--cream)';
+      gi('extra-check-'+i).style.background='transparent';
+    });
+    if(pos>=0){
+      modState.extrasSeleccionados=[];
+    } else {
+      modState.extrasSeleccionados=[idx];
+      gi('extra-'+idx).style.borderColor='var(--green)';
+      gi('extra-'+idx).style.background='var(--green3)';
+      gi('extra-check-'+idx).style.background='var(--green)';
+    }
   } else {
-    // Seleccionar
-    modState.extrasSeleccionados.push(idx);
-    gi('extra-'+idx).style.borderColor = 'var(--green)';
-    gi('extra-'+idx).style.background = 'var(--green3)';
-    gi('extra-check-'+idx).style.background = 'var(--green)';
+    if(pos >= 0){
+      modState.extrasSeleccionados.splice(pos, 1);
+      gi('extra-'+idx).style.borderColor = 'var(--cream3)';
+      gi('extra-'+idx).style.background = 'var(--cream)';
+      gi('extra-check-'+idx).style.background = 'transparent';
+    } else {
+      modState.extrasSeleccionados.push(idx);
+      gi('extra-'+idx).style.borderColor = 'var(--green)';
+      gi('extra-'+idx).style.background = 'var(--green3)';
+      gi('extra-check-'+idx).style.background = 'var(--green)';
+    }
   }
-  
+
   actualizarPrecioMod();
 }
 
