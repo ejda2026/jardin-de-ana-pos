@@ -1777,13 +1777,13 @@ _sub('ordenes', 'ordenes', function(snap) {
     var statusAnterior = _prevFbStatus[mesaNum] || null;
     var nuevoStatus = nueva ? nueva.status : null;
 
-    // Notificar al mesero: solo si esta orden es suya (por nombre)
+    // Notificar al mesero cuando una orden cambia a lista
     if(rol === 'mesero' && nuevoStatus === 'lista') {
       var esNueva = statusAnterior !== null && statusAnterior !== 'lista';
       var esReciente = nueva && nueva.ts && (Date.now() - nueva.ts) < 30*60*1000;
       var esPrimeraVez = statusAnterior === null && esReciente;
-      var miNombre = _miNombreMesero || '';
-      var esMiMesa = miNombre && nueva.mesero && nueva.mesero.toLowerCase()===miNombre.toLowerCase();
+      var miNombre = (window._getMiNombreMesero ? window._getMiNombreMesero() : '') || (_miNombreMesero||'');
+      var esMiMesa = !miNombre || !nueva.mesero || nueva.mesero.toLowerCase()===miNombre.toLowerCase();
       if((esNueva || esPrimeraVez) && esMiMesa) {
         window.dispatchEvent(new CustomEvent('ordenLista', {detail:{mesa:mesaNum}}));
       }
