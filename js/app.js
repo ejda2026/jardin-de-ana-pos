@@ -731,8 +731,15 @@ setInterval(function(){
   });
 },1000);
 
+var _prevView = null;
+var _VISTAS_SIN_NAV = ['inventario','ingredientes','turnos','finanzas','reporte','corte'];
+function goBack(){ if(_prevView) V(_prevView); }
+
 function V(v){
+  if(S.view && S.view !== v) _prevView = S.view;
   S.view=v;
+  var backBtn = gi('btn-volver-atras');
+  if(backBtn) backBtn.style.display = (_VISTAS_SIN_NAV.indexOf(v)>=0 && _prevView) ? 'flex' : 'none';
   document.querySelectorAll('.view').forEach(function(e){
     e.classList.remove('on');
     e.style.display='none';
