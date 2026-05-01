@@ -2824,7 +2824,10 @@ function renderSidebarRol(rol, permitidas){
   if(rol==='admin'){
     html+='<div class="dash-sb-item" onclick="setRT(\'sem\');V(\'reporte\');toggleDashSidebar()"><span class="si">📅</span>Semanal</div>';
     html+='<div class="dash-sb-item" onclick="setRT(\'ano\');V(\'reporte\');toggleDashSidebar()"><span class="si">📆</span>Anual</div>';
+    html+='<div class="dash-sb-section" style="color:var(--gold2)">Meseros</div>';
+    html+='<div style="padding:10px 14px"><div id="admin-meseros-lista" style="margin-bottom:8px"></div><div style="display:flex;gap:6px"><input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key===\'Enter\')agregarMeseroAdmin()" style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none"><button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button></div></div>';
   }
+  html+='<div class="dash-sb-section">Sistema</div>';
   html+='<div class="dash-sb-item" onclick="toggleDashSidebar();doLogout()"><span class="si">🔐</span>Cambiar usuario</div>';
   html+='</div>';
   sb.innerHTML=html;
