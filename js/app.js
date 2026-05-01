@@ -1735,17 +1735,17 @@ function renderKDS(){
     var esLista=o.status==='lista';
     html+='<div class="kcard t-'+cl+'" id="kc-'+k+'">'+
       '<div class="kh t-'+cl+'" id="kh-'+k+'"><div><div class="km">'+nom+'</div><div class="kme">'+(o.hora||'')+'</div></div>'+
-      '<div class="ktw">'+(!esLista?'<div class="kt t-'+cl+'" id="kt-'+k+'">'+fmtS(s)+'</div><div class="tbg t-'+cl+'" id="tb-'+k+'">'+tlb(s)+'</div>':'<div class="kds-lista-badge">LISTA ✓</div>')+'</div></div>'+
+      '<div class="ktw" style="display:flex;align-items:center;gap:8px">'+(!esLista?'<div class="kt t-'+cl+'" id="kt-'+k+'">'+fmtS(s)+'</div><div class="tbg t-'+cl+'" id="tb-'+k+'">'+tlb(s)+'</div>':'<div class="kds-lista-badge">LISTA ✓</div>')+
+      '<button onclick="elimKdsOrden('+k+')" style="background:rgba(0,0,0,.25);border:none;color:#fff;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;opacity:.7" title="Eliminar orden">🗑</button></div></div>'+
       '<div class="kbody">';
     items.forEach(function(it,ii){
       html+='<div class="krow'+(it.done?' done':'')+(it.nuevo?' knuevo':'')+'" id="kr-'+k+'-'+ii+'" style="display:flex;align-items:center;gap:4px"><div class="kq">'+it.qty+'</div><div class="knw" style="flex:1"><div class="kn">'+esc(it.n)+(it.nuevo?'<span style="margin-left:6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;vertical-align:middle">NUEVO</span>':'')+'</div>'+(it.nota?'<div class="knote">'+fmtNota(it.nota)+'</div>':'')+
         '</div><div class="kchk'+(it.done?' done':'')+'" onclick="togK('+k+','+ii+')">'+(it.done?'OK':'')+'</div>'+
-        '<button onclick="elimKdsItem('+k+','+ii+')" style="background:none;border:none;color:#c0392b;font-size:16px;cursor:pointer;padding:0 4px;line-height:1" title="Eliminar platillo">✕</button></div>';
+        '<button onclick="elimKdsItem('+k+','+ii+')" style="background:none;border:none;color:#c0392b;font-size:11px;cursor:pointer;padding:0 2px;opacity:.6" title="Eliminar">✕</button></div>';
     });
     html+='</div><div class="kactions">';
     if(o.status==='en_cocina')html+='<button class="kbtn prep" onclick="kSt('+k+',\'preparando\')">En preparacion</button>';
     if(o.status==='preparando')html+='<button class="kbtn list act" onclick="kSt('+k+',\'lista\')">Marcar lista</button>';
-    html+='<button class="kbtn" onclick="elimKdsOrden('+k+')" style="background:#c0392b;color:#fff;margin-left:auto">Eliminar orden</button>';
     html+='</div></div>';
   });
   el.innerHTML=html;
