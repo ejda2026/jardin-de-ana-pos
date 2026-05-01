@@ -1738,12 +1738,14 @@ function renderKDS(){
       '<div class="ktw">'+(!esLista?'<div class="kt t-'+cl+'" id="kt-'+k+'">'+fmtS(s)+'</div><div class="tbg t-'+cl+'" id="tb-'+k+'">'+tlb(s)+'</div>':'<div class="kds-lista-badge">LISTA ✓</div>')+'</div></div>'+
       '<div class="kbody">';
     items.forEach(function(it,ii){
-      html+='<div class="krow'+(it.done?' done':'')+(it.nuevo?' knuevo':'')+'" id="kr-'+k+'-'+ii+'"><div class="kq">'+it.qty+'</div><div class="knw"><div class="kn">'+esc(it.n)+(it.nuevo?'<span style="margin-left:6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;vertical-align:middle">NUEVO</span>':'')+'</div>'+(it.nota?'<div class="knote">'+fmtNota(it.nota)+'</div>':'')+
-        '</div><div class="kchk'+(it.done?' done':'')+'" onclick="togK('+k+','+ii+')">'+(it.done?'OK':'')+'</div></div>';
+      html+='<div class="krow'+(it.done?' done':'')+(it.nuevo?' knuevo':'')+'" id="kr-'+k+'-'+ii+'" style="display:flex;align-items:center;gap:4px"><div class="kq">'+it.qty+'</div><div class="knw" style="flex:1"><div class="kn">'+esc(it.n)+(it.nuevo?'<span style="margin-left:6px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;vertical-align:middle">NUEVO</span>':'')+'</div>'+(it.nota?'<div class="knote">'+fmtNota(it.nota)+'</div>':'')+
+        '</div><div class="kchk'+(it.done?' done':'')+'" onclick="togK('+k+','+ii+')">'+(it.done?'OK':'')+'</div>'+
+        '<button onclick="elimKdsItem('+k+','+ii+')" style="background:none;border:none;color:#c0392b;font-size:16px;cursor:pointer;padding:0 4px;line-height:1" title="Eliminar platillo">✕</button></div>';
     });
     html+='</div><div class="kactions">';
     if(o.status==='en_cocina')html+='<button class="kbtn prep" onclick="kSt('+k+',\'preparando\')">En preparacion</button>';
     if(o.status==='preparando')html+='<button class="kbtn list act" onclick="kSt('+k+',\'lista\')">Marcar lista</button>';
+    html+='<button class="kbtn" onclick="elimKdsOrden('+k+')" style="background:#c0392b;color:#fff;margin-left:auto">Eliminar orden</button>';
     html+='</div></div>';
   });
   el.innerHTML=html;
@@ -1774,6 +1776,26 @@ function kSt(k,st){
   }
   if(window.FB)window.FB.updateOrden(k,{status:o.status});
   renderKDS();renderMesas();renderCaja();
+}
+
+function elimKdsItem(k,ii){
+  var o=S.ordenes[k];if(!o||!o.kdsItems)return;
+  var it=o.kdsItems[ii];if(!it)return;
+  if(!confirm('¿Eliminar "'+it.n+'" de la comanda de '+gN(parseInt(k))+'?'))return;
+  o.kdsItems.splice(ii,1);
+  var idx=o.items?o.items.findIndex(function(i){return i.n===it.n&&i.enviado;}): -1;
+  if(idx>=0) o.items.splice(idx,1);
+  if(window.FB)window.FB.setOrden(k,o);
+  renderKDS();renderTicket();renderCaja();
+}
+
+function elimKdsOrden(k){
+  var o=S.ordenes[k];if(!o)return;
+  if(!confirm('¿Eliminar toda la orden de '+gN(parseInt(k))+'?\nEsto la quitará también del mesero.'))return;
+  delete S.ordenes[k];
+  if(window.FB)window.FB.removeOrden(k);
+  if(S.mesa===parseInt(k)){S.mesa=null;S._mesaEnEspera=false;}
+  renderKDS();renderMesas();renderCaja();renderTicket();
 }
 
 function updKStat(){
