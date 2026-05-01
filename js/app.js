@@ -2825,7 +2825,7 @@ function renderSidebarRol(rol, permitidas){
     html+='<div class="dash-sb-item" onclick="setRT(\'sem\');V(\'reporte\');toggleDashSidebar()"><span class="si">📅</span>Semanal</div>';
     html+='<div class="dash-sb-item" onclick="setRT(\'ano\');V(\'reporte\');toggleDashSidebar()"><span class="si">📆</span>Anual</div>';
   }
-  html+='<div class="dash-sb-item" onclick="gi(\'login-screen\').style.display=\'flex\';toggleDashSidebar()"><span class="si">🔐</span>Cambiar usuario</div>';
+  html+='<div class="dash-sb-item" onclick="toggleDashSidebar();doLogout()"><span class="si">🔐</span>Cambiar usuario</div>';
   html+='</div>';
   sb.innerHTML=html;
 }
