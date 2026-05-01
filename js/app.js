@@ -1089,7 +1089,7 @@ function selMesa(n){
   // Verificar lock de dispositivo (edición simultánea)
   if(S.ordenes[n] && S.ordenes[n].editando && S.ordenes[n].editando!==_deviceId){
     var lockEdad=Date.now()-(S.ordenes[n].editandoTs||0);
-    if(lockEdad<_LOCK_TTL){ notice('Otro mesero está editando esta mesa ahora mismo','var(--orange)'); return; }
+    if(lockEdad<_LOCK_TTL){ var quien=S.ordenes[n].mesero||'otro mesero'; notice('Mesa en uso por '+quien,'var(--orange)'); return; }
   }
 
   // Adquirir lock si la orden existe y no está en_caja
