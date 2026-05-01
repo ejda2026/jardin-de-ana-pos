@@ -2816,21 +2816,31 @@ var _dashTimer = null;
 function renderSidebarRol(rol, permitidas){
   var sb=gi('dash-sidebar');
   if(!sb)return;
-  var LABELS={dashboard:'🏠 Inicio',mesero:'🧑 Mesero',cocina:'🍳 Cocina',caja:'💳 Caja',reporte:'📊 Reporte',corte:'🗂 Corte',turnos:'⏰ Turnos',finanzas:'💰 Finanzas',ingredientes:'💲 Costos',inventario:'📦 Inventario'};
-  var html='<div class="dash-sb-header"><div class="dash-sb-title">🌿 Jardín de Ana</div><div style="font-size:10px;color:var(--gold3);margin-top:2px" id="dash-sb-fecha"></div></div><div style="overflow-y:auto;flex:1">';
+  var OCULTAR=['mesero','cocina','caja'];
+  var LABELS={dashboard:'🏠 Inicio',reporte:'📊 Reporte',corte:'🗂 Corte',turnos:'⏰ Turnos',finanzas:'💰 Finanzas',ingredientes:'💲 Costos',inventario:'📦 Inventario'};
+  var html='<div class="dash-sb-header"><div class="dash-sb-title">🌿 Jardín de Ana</div><div style="font-size:10px;color:var(--gold3);margin-top:2px" id="dash-sb-fecha"></div></div><div style="overflow-y:auto;flex:1;padding-bottom:20px">';
   permitidas.forEach(function(v){
+    if(OCULTAR.indexOf(v)>=0) return;
     if(LABELS[v]) html+='<div class="dash-sb-item" onclick="V(\''+v+'\');toggleDashSidebar()"><span class="si">'+LABELS[v].split(' ')[0]+'</span>'+LABELS[v].split(' ').slice(1).join(' ')+'</div>';
   });
   if(rol==='admin'){
     html+='<div class="dash-sb-item" onclick="setRT(\'sem\');V(\'reporte\');toggleDashSidebar()"><span class="si">📅</span>Semanal</div>';
     html+='<div class="dash-sb-item" onclick="setRT(\'ano\');V(\'reporte\');toggleDashSidebar()"><span class="si">📆</span>Anual</div>';
-    html+='<div class="dash-sb-section" style="color:var(--gold2)">Meseros</div>';
-    html+='<div style="padding:10px 14px"><div id="admin-meseros-lista" style="margin-bottom:8px"></div><div style="display:flex;gap:6px"><input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key===\'Enter\')agregarMeseroAdmin()" style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none"><button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button></div></div>';
+    html+='<div class="dash-sb-item" onclick="toggleMeserosSidebar()" id="sb-meseros-btn"><span class="si">👥</span>Meseros <span id="sb-meseros-arrow" style="margin-left:auto;font-size:10px">▶</span></div>';
+    html+='<div id="sb-meseros-panel" style="display:none;padding:10px 14px"><div id="admin-meseros-lista" style="margin-bottom:8px"></div><div style="display:flex;gap:6px"><input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key===\'Enter\')agregarMeseroAdmin()" style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none"><button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button></div></div>';
   }
-  html+='<div class="dash-sb-section">Sistema</div>';
-  html+='<div class="dash-sb-item" onclick="toggleDashSidebar();doLogout()"><span class="si">🔐</span>Cambiar usuario</div>';
   html+='</div>';
   sb.innerHTML=html;
+}
+
+function toggleMeserosSidebar(){
+  var panel=gi('sb-meseros-panel');
+  var arrow=gi('sb-meseros-arrow');
+  if(!panel)return;
+  var abierto=panel.style.display!=='none';
+  panel.style.display=abierto?'none':'block';
+  if(arrow)arrow.textContent=abierto?'▶':'▼';
+  if(!abierto) renderAdminMeseros();
 }
 
 function toggleDashSidebar(){
