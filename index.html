@@ -354,6 +354,15 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
         <div class="dash-sb-item" onclick="V('caja');toggleDashSidebar()"><span class="si">💳</span>Vista Caja</div>
         <div class="dash-sb-item" onclick="setRT('sem');V('reporte');toggleDashSidebar()"><span class="si">📅</span>Semanal</div>
         <div class="dash-sb-item" onclick="setRT('ano');V('reporte');toggleDashSidebar()"><span class="si"></span>Anual</div>
+        <div class="dash-sb-section">Meseros</div>
+        <div style="padding:10px 14px">
+          <div id="admin-meseros-lista" style="margin-bottom:8px"></div>
+          <div style="display:flex;gap:6px">
+            <input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key==='Enter')agregarMeseroAdmin()"
+              style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none">
+            <button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button>
+          </div>
+        </div>
         <div class="dash-sb-section">Sistema</div>
         <div class="dash-sb-item" onclick="gi('login-screen').style.display='flex';gi('login-screen').style.alignItems='center';gi('login-screen').style.justifyContent='center';toggleDashSidebar()"><span class="si">🔐</span>Cambiar usuario</div>
       </div>
@@ -2074,6 +2083,24 @@ onValue(ref(db, '.info/connected'), function(snap) {
   _isOnline = snap.val() === true;
   window.setSyncStatus(_isOnline ? 'on' : 'off');
 });
+
+onValue(ref(db, 'config/meseros'), function(snap) {
+  var lista = snap.val();
+  window._meserosLista = Array.isArray(lista) ? lista : (lista ? Object.values(lista) : []);
+});
+
+window.FB.saveMeseros = function(lista){
+  return syncSet('config/meseros', lista);
+};
 </script>
+
+<div id="modal-mesero" style="display:none;position:fixed;inset:0;background:rgba(26,21,18,0.6);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--cream);border-radius:16px;padding:28px;width:340px;max-width:90vw;box-shadow:var(--shadow-lg);animation:slideUp .25s ease">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--ink);margin-bottom:4px">¿Quién atiende esta mesa?</div>
+    <div id="modal-mesero-mesa" style="font-size:13px;color:var(--ink3);margin-bottom:18px"></div>
+    <div id="modal-mesero-lista" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px"></div>
+    <button onclick="cerrarModalMesero()" style="width:100%;padding:11px;border:1.5px solid var(--cream3);border-radius:10px;background:white;font-family:'Lora',sans-serif;font-size:13px;cursor:pointer;color:var(--ink2)">Cancelar</button>
+  </div>
+</div>
 </body>
 </html>

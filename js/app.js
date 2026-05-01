@@ -2837,6 +2837,7 @@ function toggleDashSidebar(){
   var open=sb.style.left==='0px';
   sb.style.left=open?'-280px':'0px';
   if(ov)ov.style.display=open?'none':'block';
+  if(!open) renderAdminMeseros();
 }
 
 function startDashTimer(){
@@ -6439,19 +6440,28 @@ loadFin();
 var _meseroCallback = null;
 var _miNombreMesero = localStorage.getItem('jda_mesero_nombre') || '';
 window._getMiNombreMesero = function(){ return _miNombreMesero; };
+
 function pedirMesero(mesaLabel, callback){
   _meseroCallback = callback;
-  var inp = document.getElementById('modal-mesero-input');
   var lbl = document.getElementById('modal-mesero-mesa');
-  if(inp){ inp.value = _miNombreMesero || ''; }
   if(lbl) lbl.textContent = mesaLabel || '';
+  var lista = window._meserosLista || [];
+  var contenedor = document.getElementById('modal-mesero-lista');
+  if(contenedor){
+    if(!lista.length){
+      contenedor.innerHTML='<div style="grid-column:1/-1;color:var(--ink3);font-size:12px;text-align:center;padding:8px">Sin meseros configurados — pide al admin que los agregue</div>';
+    } else {
+      contenedor.innerHTML = lista.map(function(n){
+        var activo = n === _miNombreMesero;
+        return '<button onclick="seleccionarMeseroModal(\''+esc(n)+'\')" style="padding:12px 8px;border:2px solid '+(activo?'var(--gold)':'var(--cream3)')+';border-radius:10px;background:'+(activo?'var(--gold3)':'var(--cream)')+';font-size:13px;font-weight:'+(activo?'700':'500')+';cursor:pointer;color:var(--ink)">'+esc(n)+'</button>';
+      }).join('');
+    }
+  }
   var m = document.getElementById('modal-mesero');
-  if(m){ m.style.display='flex'; setTimeout(function(){ if(inp){ inp.focus(); inp.select(); } }, 100); }
+  if(m) m.style.display='flex';
 }
-function confirmarMesero(){
-  var inp = document.getElementById('modal-mesero-input');
-  var nombre = inp ? inp.value.trim() : '';
-  if(!nombre){ if(inp) inp.style.borderColor='var(--red)'; return; }
+
+function seleccionarMeseroModal(nombre){
   _miNombreMesero = nombre;
   try{ localStorage.setItem('jda_mesero_nombre', nombre); }catch(e){}
   if(window._registrarPushToken) window._registrarPushToken('mesero');
@@ -6459,10 +6469,51 @@ function confirmarMesero(){
   cerrarModalMesero();
   if(cb) cb(nombre);
 }
+
+function confirmarMesero(){
+  if(_miNombreMesero){ seleccionarMeseroModal(_miNombreMesero); }
+}
+
 function cerrarModalMesero(){
   var m = document.getElementById('modal-mesero');
   if(m) m.style.display='none';
   _meseroCallback = null;
+}
+
+// ─── A1b: Admin — gestión de lista de meseros ───
+function renderAdminMeseros(){
+  var el = document.getElementById('admin-meseros-lista');
+  if(!el) return;
+  var lista = window._meserosLista || [];
+  if(!lista.length){ el.innerHTML='<div style="color:var(--ink3);font-size:12px;font-style:italic">Sin meseros. Agrega uno abajo.</div>'; return; }
+  el.innerHTML = lista.map(function(n,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--cream);border:1px solid var(--cream3);border-radius:8px;margin-bottom:6px">'
+      +'<span style="font-size:13px">'+esc(n)+'</span>'
+      +'<button onclick="eliminarMeseroAdmin('+i+')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">✕</button>'
+      +'</div>';
+  }).join('');
+}
+
+function agregarMeseroAdmin(){
+  var inp = document.getElementById('admin-mesero-input');
+  if(!inp) return;
+  var nombre = inp.value.trim();
+  if(!nombre) return;
+  var lista = (window._meserosLista || []).slice();
+  if(lista.indexOf(nombre) >= 0){ showToast('Ya existe ese nombre','var(--orange)'); return; }
+  lista.push(nombre);
+  window._meserosLista = lista;
+  if(window.FB) window.FB.saveMeseros(lista);
+  inp.value = '';
+  renderAdminMeseros();
+}
+
+function eliminarMeseroAdmin(idx){
+  var lista = (window._meserosLista || []).slice();
+  lista.splice(idx, 1);
+  window._meserosLista = lista;
+  if(window.FB) window.FB.saveMeseros(lista);
+  renderAdminMeseros();
 }
 
 // ─── D1: Badge turno activo ───
