@@ -1777,7 +1777,8 @@ function renderCaja(){
   var list=[];
   Object.keys(S.ordenes).forEach(function(m){
     var o=S.ordenes[m];
-    if(o&&(o.status==='abierta'||o.status==='en_cocina'||o.status==='lista'||o.status==='preparando'||o.status==='en_caja'))list.push([m,o]);
+    var hayItems=o&&o.items&&o.items.length>0;
+    if(o&&hayItems&&(o.status==='abierta'||o.status==='en_cocina'||o.status==='lista'||o.status==='preparando'||o.status==='en_caja'))list.push([m,o]);
   });
   if(!list.length){el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:28px;color:var(--ink3);font-style:italic;font-size:11px">Sin ordenes activas</div>';updDia();return;}
   var html='';
