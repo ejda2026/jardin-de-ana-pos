@@ -401,6 +401,7 @@ function saveState(){
     };
     localStorage.setItem('jda_state', JSON.stringify(state));
     localStorage.setItem('jda_folio', S.folio);
+    if(window._rolActual){ try{ localStorage.setItem('jda_session',JSON.stringify({rol:window._rolActual,mesa:S.mesa||null,ts:Date.now()})); }catch(e){} }
   } catch(e) {
     if(e.name==='QuotaExceededError'||e.code===22)
       notice('Almacenamiento local lleno — contacta soporte','var(--red)');
@@ -411,6 +412,10 @@ function saveState(){
 }
 
 function loadState(){
+  try {
+    var sess = localStorage.getItem('jda_session');
+    if(sess){ var sd=JSON.parse(sess); var esHoyS=sd.ts&&new Date(sd.ts).toDateString()===new Date().toDateString(); if(esHoyS&&sd.rol) window._sessionRestaurar=sd; }
+  } catch(e){}
   try {
     var saved = localStorage.getItem('jda_state');
     if(saved){
@@ -439,7 +444,9 @@ window.clearAppState = function(){
   try{ _cerrandoM=false; _cobrandoL=false; _cobPProc={}; }catch(e){}
 };
 
-var _deviceId = Date.now().toString(36).slice(-4).toUpperCase()+Math.random().toString(36).slice(2,4).toUpperCase();
+var _savedDevId = localStorage.getItem('jda_device_id');
+var _deviceId = _savedDevId || (Date.now().toString(36).slice(-4).toUpperCase()+Math.random().toString(36).slice(2,4).toUpperCase());
+if(!_savedDevId){ try{ localStorage.setItem('jda_device_id',_deviceId); }catch(e){} }
 var _LOCK_TTL = 5*60*1000;
 setInterval(function(){
   if(S.mesa && S.ordenes[S.mesa] && S.ordenes[S.mesa].editando===_deviceId && window.FB){

@@ -1639,7 +1639,9 @@ window._loginConPin = function(rol){
 window.doLogout = function(){
   try{ if(window.clearAppState) window.clearAppState(); }catch(e){}
   window._rolActual = null;
+  window._sessionRestaurar = null;
   _subsActivos = false;
+  try{ localStorage.removeItem('jda_session'); }catch(e){}
   try{
     Object.keys(_unsubs).forEach(function(k){ try{if(_unsubs[k])_unsubs[k]();}catch(e){} });
     _unsubs = {};
@@ -1647,6 +1649,26 @@ window.doLogout = function(){
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-wrap').style.display = 'none';
 };
+
+if(window._sessionRestaurar && window._sessionRestaurar.rol){
+  (function(){
+    var sr = window._sessionRestaurar;
+    window._sessionRestaurar = null;
+    window._loginConPin(sr.rol);
+    if(sr.mesa && window.S){
+      setTimeout(function(){
+        if(window.S.ordenes && window.S.ordenes[sr.mesa]){
+          window.S.mesa = sr.mesa;
+          if(typeof renderTicket==='function') renderTicket();
+          if(typeof renderMesas==='function') renderMesas();
+          notice('Sesión restaurada','var(--green)');
+        }
+      }, 1500);
+    } else {
+      notice('Sesión restaurada','var(--green)');
+    }
+  })();
+}
 
 function aplicarRol(rol){
   var permitidas = ROL_VISTAS[rol] || ['mesero'];
