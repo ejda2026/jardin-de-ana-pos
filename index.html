@@ -1999,6 +1999,8 @@ window.FB = {
   },
   limpiarDatosPrueba: async function(){
     if(!confirm('¿Eliminar TODOS los datos de prueba? (ordenes, ventas, cortes)\n\nLa configuración (cuentas a pagar, nómina, costos) NO se toca.')) return;
+    var conf = prompt('Escribe ELIMINAR para confirmar:');
+    if(conf !== 'ELIMINAR') return;
     try {
       await remove(ref(db, 'ordenes'));
       await remove(ref(db, 'ventas'));

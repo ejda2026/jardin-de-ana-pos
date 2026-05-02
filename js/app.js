@@ -421,7 +421,7 @@ function loadState(){
     if(saved){
       var data = JSON.parse(saved);
       S.folio = parseInt(localStorage.getItem('jda_folio')) || data.folio || 1;
-      var esHoy = data.timestamp && new Date(data.timestamp).toDateString() === new Date().toDateString();
+      var esHoy = data.timestamp && (Date.now() - data.timestamp) < 24*60*60*1000;
       if(!esHoy){ return; }
       S.ordenes = data.ordenes || {};
       S.colaEspera = data.colaEspera || {};
