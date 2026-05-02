@@ -3402,10 +3402,10 @@ function renderResumen(){
   }
 
   // ── Gráficas ──
-  renderEvCharts(periodoData, depMap, ef, tj, tr);
+  renderEvCharts(periodoData, depMap, ef, tj, tr, tC);
 }
 
-function renderEvCharts(periodoData, depMap, ef, tj, tr){
+function renderEvCharts(periodoData, depMap, ef, tj, tr, tC){
   // Gráfica de barras — ventas por día
   var ctxB=gi('ev-chart-barras');
   if(ctxB){
