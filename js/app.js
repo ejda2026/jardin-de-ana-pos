@@ -447,7 +447,7 @@ window.clearAppState = function(){
 var _savedDevId = localStorage.getItem('jda_device_id');
 var _deviceId = _savedDevId || (Date.now().toString(36).slice(-4).toUpperCase()+Math.random().toString(36).slice(2,4).toUpperCase());
 if(!_savedDevId){ try{ localStorage.setItem('jda_device_id',_deviceId); }catch(e){} }
-var _LOCK_TTL = 5*60*1000;
+var _LOCK_TTL = 10*60*1000;
 setInterval(function(){
   if(S.mesa && S.ordenes[S.mesa] && S.ordenes[S.mesa].editando===_deviceId && window.FB){
     S.ordenes[S.mesa].editandoTs=Date.now();
@@ -820,7 +820,14 @@ function notif(m){
   setTimeout(function(){beep();},1000);
   setTimeout(function(){beep();},1500);
 }
-window.addEventListener('ordenLista', function(e){ if(window._rolActual==='mesero') notif(e.detail.mesa); });
+var _lastNotif={};
+window.addEventListener('ordenLista', function(e){
+  if(window._rolActual!=='mesero') return;
+  var m=e.detail.mesa, ahora=Date.now();
+  if(_lastNotif[m] && ahora-_lastNotif[m]<10000) return;
+  _lastNotif[m]=ahora;
+  notif(m);
+});
 function cerrarNotifModal(){
   gi('notif-modal').classList.remove('on');
 }
@@ -1115,7 +1122,13 @@ function selMesa(n){
   // Si la orden está en_caja: permitir crear orden en cola de espera
   if(S.ordenes[n] && S.ordenes[n].status==='en_caja'){
     if(S.colaEspera[n]){
-      // Ya hay una orden en espera — abrirla para editar
+      // Ya hay una orden en espera — verificar lock antes de editar
+      var esp=S.colaEspera[n];
+      if(esp.editando && esp.editando!==_deviceId && (Date.now()-(esp.editandoTs||0))<_LOCK_TTL){
+        notice('Orden en espera en uso por '+(esp.mesero||'otro mesero'),'var(--orange)'); return;
+      }
+      esp.editando=_deviceId; esp.editandoTs=Date.now();
+      if(window.FB) window.FB.saveEspera(n, esp);
       S.mesa = n;
       S._mesaEnEspera = true;
       gi('mesero-bar').style.display='flex';
@@ -1126,7 +1139,7 @@ function selMesa(n){
     }
     pedirMesero('Nueva orden — '+gN(n), function(nombreMesero){
       if(!nombreMesero) nombreMesero = 'Sin asignar';
-      S.colaEspera[n] = {items:[],bebP:[],status:'abierta',hora:nowT(),numP:1,descTipo:null,descVal:0,mesero:nombreMesero};
+      S.colaEspera[n] = {items:[],bebP:[],status:'abierta',hora:nowT(),numP:1,descTipo:null,descVal:0,mesero:nombreMesero,editando:_deviceId,editandoTs:Date.now()};
       if(window.FB) window.FB.saveEspera(n, S.colaEspera[n]);
       S.mesa = n;
       S._mesaEnEspera = true;
