@@ -2090,9 +2090,20 @@ onValue(ref(db, 'config/meseros'), function(snap) {
   var lista = snap.val();
   window._meserosLista = Array.isArray(lista) ? lista : (lista ? Object.values(lista) : []);
 });
+onValue(ref(db, 'config/pins'), function(snap) {
+  var pins = snap.val();
+  if(pins && typeof pins === 'object'){
+    ['mesero','cocina','caja','admin'].forEach(function(r){
+      if(pins[r] && /^\d{4}$/.test(pins[r])) window._PINS[r] = pins[r];
+    });
+  }
+});
 
 window.FB.saveMeseros = function(lista){
   return syncSet('config/meseros', lista);
+};
+window.FB.savePins = function(pins){
+  return syncSet('config/pins', pins);
 };
 </script>
 

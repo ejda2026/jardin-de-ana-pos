@@ -2875,6 +2875,8 @@ function renderSidebarRol(rol, permitidas){
     html+='<div class="dash-sb-item" onclick="setRT(\'ano\');V(\'reporte\');toggleDashSidebar()"><span class="si">📆</span>Anual</div>';
     html+='<div class="dash-sb-item" onclick="toggleMeserosSidebar()" id="sb-meseros-btn"><span class="si">👥</span>Meseros <span id="sb-meseros-arrow" style="margin-left:auto;font-size:10px">▶</span></div>';
     html+='<div id="sb-meseros-panel" style="display:none;padding:10px 14px"><div id="admin-meseros-lista" style="margin-bottom:8px"></div><div style="display:flex;gap:6px"><input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key===\'Enter\')agregarMeseroAdmin()" style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none"><button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button></div></div>';
+    html+='<div class="dash-sb-item" onclick="togglePinsSidebar()" id="sb-pins-btn"><span class="si">🔐</span>PINs <span id="sb-pins-arrow" style="margin-left:auto;font-size:10px">▶</span></div>';
+    html+='<div id="sb-pins-panel" style="display:none;padding:10px 14px"><div id="admin-pins-lista"></div></div>';
   }
   html+='</div>';
   sb.innerHTML=html;
@@ -2888,6 +2890,38 @@ function toggleMeserosSidebar(){
   panel.style.display=abierto?'none':'block';
   if(arrow)arrow.textContent=abierto?'▶':'▼';
   if(!abierto) renderAdminMeseros();
+}
+function togglePinsSidebar(){
+  var panel=gi('sb-pins-panel');
+  var arrow=gi('sb-pins-arrow');
+  if(!panel)return;
+  var abierto=panel.style.display!=='none';
+  panel.style.display=abierto?'none':'block';
+  if(arrow)arrow.textContent=abierto?'▶':'▼';
+  if(!abierto) renderAdminPins();
+}
+function renderAdminPins(){
+  var el=gi('admin-pins-lista');
+  if(!el)return;
+  var roles=['mesero','cocina','caja','admin'];
+  el.innerHTML=roles.map(function(r){
+    return '<div style="margin-bottom:8px">'
+      +'<div style="font-size:10px;color:var(--gold3);margin-bottom:3px">'+ROLE_LABELS[r]+'</div>'
+      +'<div style="display:flex;gap:6px">'
+      +'<input id="pin-inp-'+r+'" type="password" maxlength="4" placeholder="Nuevo PIN" style="flex:1;padding:6px 8px;border:1.5px solid rgba(255,255,255,.15);border-radius:7px;background:rgba(255,255,255,.08);color:#fff;font-size:13px;outline:none;letter-spacing:4px">'
+      +'<button onclick="cambiarPin(\''+r+'\')" style="padding:6px 10px;background:var(--gold);color:var(--ink);border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">OK</button>'
+      +'</div></div>';
+  }).join('');
+}
+function cambiarPin(rol){
+  var inp=gi('pin-inp-'+rol);
+  if(!inp)return;
+  var nuevo=inp.value.trim();
+  if(!/^\d{4}$/.test(nuevo)){showToast('El PIN debe ser exactamente 4 dígitos','var(--orange)');return;}
+  _PINS[rol]=nuevo;
+  if(window.FB) window.FB.savePins(_PINS);
+  inp.value='';
+  showToast('PIN de '+ROLE_LABELS[rol]+' actualizado','var(--green)');
 }
 
 function toggleDashSidebar(){
@@ -5435,9 +5469,10 @@ function renderCorteAdmin() {
 
 // ─── V() debe incluir corte ────────────────────────────────────
 // ─── LOGIN CON PIN ───────────────────────────────────────────
-var _PINS=(function(){return {mesero:'9905',cocina:'3570',caja:'1970',admin:'8934'};})();
+var _PINS={mesero:'9905',cocina:'3570',caja:'1970',admin:'8934'};
 var ROLE_LABELS={mesero:'Mesero',cocina:'Cocina',caja:'Caja',admin:'Admin'};
 var pinRole=null,pinVal='';
+var _pinIntentos=0,_pinBloqueadoHasta=0;
 
 function selRole(role){
   pinRole=role;pinVal='';
@@ -5449,18 +5484,33 @@ function selRole(role){
 function cancelPin(){pinRole=null;pinVal='';gi('pin-box').style.display='none';updDots();}
 function pinKey(k){
   if(!pinRole||pinVal.length>=4)return;
+  if(Date.now()<_pinBloqueadoHasta){
+    var seg=Math.ceil((_pinBloqueadoHasta-Date.now())/1000);
+    gi('pin-error').textContent='Bloqueado '+seg+'s';
+    gi('pin-error').style.display='block';
+    return;
+  }
   pinVal+=k;updDots();
   if(pinVal.length===4){
     setTimeout(function(){
       if(pinVal===_PINS[pinRole]){
+        _pinIntentos=0;
         var rol=pinRole;
         pinRole=null;pinVal='';
         if(window._loginConPin) window._loginConPin(rol);
         notice('Bienvenido — '+ROLE_LABELS[rol],'var(--green)');
       } else {
-        gi('pin-error').style.display='block';
+        _pinIntentos++;
         pinVal='';updDots();
-        setTimeout(function(){gi('pin-error').style.display='none';},1500);
+        if(_pinIntentos>=3){
+          _pinBloqueadoHasta=Date.now()+30000;
+          _pinIntentos=0;
+          gi('pin-error').textContent='3 intentos fallidos — espera 30s';
+        } else {
+          gi('pin-error').textContent='PIN incorrecto (intento '+_pinIntentos+'/3)';
+        }
+        gi('pin-error').style.display='block';
+        setTimeout(function(){gi('pin-error').style.display='none';gi('pin-error').textContent='PIN incorrecto';},2000);
       }
     },150);
   }
