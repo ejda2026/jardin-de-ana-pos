@@ -5483,7 +5483,7 @@ function selRole(role){
   pinRole=role;pinVal='';
   gi('pin-box').style.display='flex';
   gi('pin-role-lbl').textContent='PIN de '+ROLE_LABELS[role];
-  gi('pin-error').style.display='none';
+  var er=gi('pin-error');if(er){er.style.display='none';er.textContent='PIN incorrecto';}
   updDots();
 }
 function cancelPin(){pinRole=null;pinVal='';gi('pin-box').style.display='none';updDots();}
@@ -5495,7 +5495,8 @@ function _showPinError(msg){
   setTimeout(function(){if(el)el.style.display='none';},2000);
 }
 function pinKey(k){
-  if(!pinRole||pinVal.length>=4)return;
+  if(!pinRole){gi('pin-box').style.display='flex';_showPinError('Selecciona un rol primero');return;}
+  if(pinVal.length>=4)return;
   if(_pinBloqueadoHasta>0&&Date.now()<_pinBloqueadoHasta){
     _showPinError('Bloqueado '+Math.ceil((_pinBloqueadoHasta-Date.now())/1000)+'s');
     return;
