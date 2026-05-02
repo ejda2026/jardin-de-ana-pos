@@ -1625,8 +1625,9 @@ function enviar(){
   var bI=o.items.filter(function(i){return i.esBev && !i.enviado;});
   // Bebidas: agregar al checklist del mesero (bebP) sin enviar a cocina
   bI.forEach(function(b){
-    var yaExiste=o.bebP.some(function(x){return x.n===b.n;});
-    if(!yaExiste) o.bebP.push({n:b.n,qty:b.qty,done:false,p:b.p,persona:b.persona||null});
+    var ex=o.bebP.find(function(x){return x.n===b.n&&!x.done;});
+    if(ex) ex.qty=(ex.qty||1)+b.qty;
+    else o.bebP.push({n:b.n,qty:b.qty,done:false,p:b.p,persona:b.persona||null});
     b.enviado=true;
   });
   // Solo los platillos nuevos (no bevidas) van a cocina
@@ -2064,7 +2065,7 @@ function cerrarM(){
   });
   var propinaTot=(o.pagosPP||[]).reduce(function(s,p){return s+(p.propina||0);},0);
   var totalFinalM=parseFloat((t.total+propinaTot).toFixed(2));
-  var venta={mesa:m,nombreMesa:gN(parseInt(m)),sub:t.sub,desc:t.desc,total:totalFinalM,subtotalSinPropina:t.total,propina:propinaTot,metodo:mf,metodos:ms,desglose:desglose,hora:nowT(),fecha:today(),timestamp:Date.now(),items:t.all,folio:f,mesero:meseroNombre};
+  var venta={mesa:m,nombreMesa:gN(parseInt(m)),sub:t.sub,desc:t.desc,total:totalFinalM,subtotalSinPropina:t.total,propina:propinaTot,metodo:mf,metodos:ms,desglose:desglose,hora:nowT(),fecha:today(),timestamp:Date.now(),items:t.all,folio:f,mesero:meseroNombre,descAplicadoPor:o.descAplicadoPor||null,descTs:o.descTs||null};
   S.ventas.push(venta);
   var tieneEspera=!!S.colaEspera[m];
   var ordenRespaldo=o;
@@ -2114,8 +2115,12 @@ function setCM(m){
 }
 function sDT(t){
   if(!S.cajaId)return;
-  S.ordenes[S.cajaId].descTipo=t;S.ordenes[S.cajaId].descVal=0;
-  if(window.FB) window.FB.updateOrden(S.cajaId,{descTipo:t,descVal:0});
+  var quien=window._nombreMesero||window._rolActual||'caja';
+  S.ordenes[S.cajaId].descTipo=t;
+  S.ordenes[S.cajaId].descVal=0;
+  S.ordenes[S.cajaId].descAplicadoPor=t?quien:null;
+  S.ordenes[S.cajaId].descTs=t?Date.now():null;
+  if(window.FB) window.FB.updateOrden(S.cajaId,{descTipo:t,descVal:0,descAplicadoPor:S.ordenes[S.cajaId].descAplicadoPor,descTs:S.ordenes[S.cajaId].descTs});
   renderCobro();
 }
 function aDsc(v){
@@ -2168,7 +2173,7 @@ function updPagoCapturado(i,v){
   var pEl=document.getElementById('pago-pend-val');
   if(pEl){pEl.textContent=fmt(Math.max(0,pendiente));pEl.style.color=pendiente<=0?'var(--green)':'var(--orange)';}
   var cobBtn=document.getElementById('cobrar-btn-libre');
-  if(cobBtn){cobBtn.disabled=pendiente>0.5;cobBtn.textContent=pendiente<=0?'Cobrar '+fmt(totalConPropina):'Pendiente '+fmt(Math.max(0,pendiente));}
+  if(cobBtn){cobBtn.disabled=pendiente>0.01;cobBtn.textContent=pendiente<=0?'Cobrar '+fmt(totalConPropina):'Pendiente '+fmt(Math.max(0,pendiente));}
 }
 function setMetodoMonto(k,v){}
 function cCL(tot){var el=document.querySelector('.efinput');var pc=el?parseFloat(el.value)||0:0;var cv=gi('cbl');if(cv)cv.textContent=fmt(Math.max(0,pc-tot));}
@@ -4888,21 +4893,40 @@ function initCorte() {
   var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   gi('corte-fecha-lbl').textContent = dias[hoy.getDay()] + ' ' + hoy.getDate() + ' de ' + meses[hoy.getMonth()] + ' ' + hoy.getFullYear();
 
-  // Auto-llenar ventas del POS
-  var vef = S.ventas.filter(function(v){return v.metodo==='efectivo';}).reduce(function(s,v){return s+v.total;},0);
-  var vtj = S.ventas.filter(function(v){return v.metodo==='tarjeta';}).reduce(function(s,v){return s+v.total;},0);
-  var vtr = S.ventas.filter(function(v){return v.metodo==='transferencia';}).reduce(function(s,v){return s+v.total;},0);
-  var vmix = S.ventas.filter(function(v){return v.metodo==='mixto';});
-  vmix.forEach(function(v){
-    if(v.metodos) v.metodos.forEach(function(m){
-      if(m==='efectivo') vef+=v.total/(v.metodos.length);
-      else if(m==='tarjeta') vtj+=v.total/(v.metodos.length);
-      else if(m==='transferencia') vtr+=v.total/(v.metodos.length);
-    });
+  // Auto-llenar ventas del POS (separando venta de propina por método)
+  var vef=0,vtj=0,vtr=0,pef=0,ptj=0,ptr=0;
+  S.ventas.forEach(function(v){
+    var d=v.desglose;
+    if(d){
+      vef+=(d.efectivo?d.efectivo.monto:0);
+      vtj+=(d.tarjeta?d.tarjeta.monto:0);
+      vtr+=(d.transferencia?d.transferencia.monto:0);
+      pef+=(d.efectivo?d.efectivo.propina:0);
+      ptj+=(d.tarjeta?d.tarjeta.propina:0);
+      ptr+=(d.transferencia?d.transferencia.propina:0);
+    } else {
+      var met=v.metodo||'efectivo';
+      var prop=v.propina||0;
+      var sub=v.subtotalSinPropina||(v.total-prop);
+      if(met==='efectivo'){vef+=sub;pef+=prop;}
+      else if(met==='tarjeta'){vtj+=sub;ptj+=prop;}
+      else if(met==='transferencia'){vtr+=sub;ptr+=prop;}
+      else if(met==='mixto'&&v.metodos){
+        var share=sub/v.metodos.length;
+        v.metodos.forEach(function(mm){
+          if(mm==='efectivo')vef+=share;
+          else if(mm==='tarjeta')vtj+=share;
+          else if(mm==='transferencia')vtr+=share;
+        });
+      }
+    }
   });
   if(gi('cf-vef')&&!gi('cf-vef').value) gi('cf-vef').value = vef > 0 ? vef.toFixed(2) : '';
   if(gi('cf-vtj')&&!gi('cf-vtj').value) gi('cf-vtj').value = vtj > 0 ? vtj.toFixed(2) : '';
   if(gi('cf-vtr')&&!gi('cf-vtr').value) gi('cf-vtr').value = vtr > 0 ? vtr.toFixed(2) : '';
+  if(gi('cf-prop-ef')&&!gi('cf-prop-ef').value) gi('cf-prop-ef').value = pef > 0 ? pef.toFixed(2) : '';
+  if(gi('cf-prop-tj')&&!gi('cf-prop-tj').value) gi('cf-prop-tj').value = ptj > 0 ? ptj.toFixed(2) : '';
+  if(gi('cf-prop-tr')&&!gi('cf-prop-tr').value) gi('cf-prop-tr').value = ptr > 0 ? ptr.toFixed(2) : '';
   calcVentas();
   renderAnticipos();
   renderGastosCorte();
