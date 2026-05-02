@@ -1280,7 +1280,12 @@ function renderMenu(){
     var matchCat = cat==='Todos'
       ? CATS_PROPIAS.indexOf(m.cat)===-1   // "Todos" excluye los que tienen pestaña propia
       : m.cat===cat;
-    var matchSearch = searchTerm==='' || m.n.toLowerCase().includes(searchTerm);
+    var matchSearch = searchTerm==='' || (function(s,t){
+      if(s.includes(t)) return true;
+      var si=0;
+      for(var ci=0;ci<s.length&&si<t.length;ci++) if(s[ci]===t[si]) si++;
+      return si===t.length;
+    })(m.n.toLowerCase(), searchTerm);
     return matchCat && matchSearch;
   });
   
