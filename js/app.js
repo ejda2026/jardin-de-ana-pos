@@ -1244,6 +1244,9 @@ function entregarMesa(){
   notice('Confirmado: '+nombre+' servida - pendiente cobro en Caja','var(--green)');
 }
 
+// ─── BÚSQUEDA DE PLATILLOS ─────────────────────────────────
+var searchTerm = '';
+
 // Menú
 (function(){
   var el=gi('cats');
@@ -1264,9 +1267,6 @@ function entregarMesa(){
   });
   renderMenu();
 })();
-
-// ─── BÚSQUEDA DE PLATILLOS ─────────────────────────────────
-var searchTerm = '';
 
 function buscarPlatillo(term){
   searchTerm = term.toLowerCase().trim();
