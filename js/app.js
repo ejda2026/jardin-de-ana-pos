@@ -5487,19 +5487,25 @@ function selRole(role){
   updDots();
 }
 function cancelPin(){pinRole=null;pinVal='';gi('pin-box').style.display='none';updDots();}
+function _showPinError(msg){
+  var el=gi('pin-error');
+  if(!el)return;
+  el.textContent=msg||'PIN incorrecto';
+  el.style.display='block';
+  setTimeout(function(){if(el)el.style.display='none';},2000);
+}
 function pinKey(k){
   if(!pinRole||pinVal.length>=4)return;
-  if(Date.now()<_pinBloqueadoHasta){
-    var seg=Math.ceil((_pinBloqueadoHasta-Date.now())/1000);
-    gi('pin-error').textContent='Bloqueado '+seg+'s';
-    gi('pin-error').style.display='block';
+  if(_pinBloqueadoHasta>0&&Date.now()<_pinBloqueadoHasta){
+    _showPinError('Bloqueado '+Math.ceil((_pinBloqueadoHasta-Date.now())/1000)+'s');
     return;
   }
   pinVal+=k;updDots();
   if(pinVal.length===4){
     setTimeout(function(){
-      if(pinVal===_PINS[pinRole]){
-        _pinIntentos=0;
+      var correcto=_PINS[pinRole]&&pinVal===_PINS[pinRole];
+      if(correcto){
+        _pinIntentos=0;_pinBloqueadoHasta=0;
         var rol=pinRole;
         pinRole=null;pinVal='';
         if(window._loginConPin) window._loginConPin(rol);
@@ -5510,12 +5516,10 @@ function pinKey(k){
         if(_pinIntentos>=3){
           _pinBloqueadoHasta=Date.now()+30000;
           _pinIntentos=0;
-          gi('pin-error').textContent='3 intentos fallidos — espera 30s';
+          _showPinError('3 intentos fallidos — espera 30s');
         } else {
-          gi('pin-error').textContent='PIN incorrecto (intento '+_pinIntentos+'/3)';
+          _showPinError('PIN incorrecto ('+_pinIntentos+'/3)');
         }
-        gi('pin-error').style.display='block';
-        setTimeout(function(){gi('pin-error').style.display='none';gi('pin-error').textContent='PIN incorrecto';},2000);
       }
     },150);
   }
