@@ -330,43 +330,44 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   </div>
 </div>
 
+<div id="dash-sidebar" style="position:fixed;top:0;left:-280px;width:260px;height:100vh;background:var(--ink);z-index:9990;display:flex;flex-direction:column;transition:left .25s ease;box-shadow:4px 0 20px rgba(0,0,0,.4)">
+  <div style="position:fixed;inset:0;z-index:9989;display:none;background:rgba(0,0,0,.4)" id="dash-overlay" onclick="toggleDashSidebar()"></div>
+  <div class="dash-sb-header">
+    <div class="dash-sb-title">🌿 Jardín de Ana</div>
+    <div style="font-size:10px;color:var(--gold3);margin-top:2px" id="dash-sb-fecha"></div>
+  </div>
+  <div style="overflow-y:auto;flex:1">
+    <div class="dash-sb-section">Reportes</div>
+    <div class="dash-sb-item" onclick="V('reporte');toggleDashSidebar()"><span class="si">📊</span>Reporte de ventas</div>
+    <div class="dash-sb-item" onclick="V('corte');toggleDashSidebar()"><span class="si">🗂</span>Corte de caja</div>
+    <div class="dash-sb-section">Administración</div>
+    <div class="dash-sb-item" onclick="V('finanzas');toggleDashSidebar()"><span class="si">💰</span>Finanzas</div>
+    <div class="dash-sb-item" onclick="V('ingredientes');toggleDashSidebar()"><span class="si">💲</span>Costos</div>
+    <div class="dash-sb-item" onclick="V('inventario');toggleDashSidebar()"><span class="si">📦</span>Inventario</div>
+    <div class="dash-sb-section">Operación</div>
+    <div class="dash-sb-item" onclick="V('mesero');toggleDashSidebar()"><span class="si">🧑</span>Vista Mesero</div>
+    <div class="dash-sb-item" onclick="V('cocina');toggleDashSidebar()"><span class="si">🍳</span>Vista Cocina</div>
+    <div class="dash-sb-item" onclick="V('caja');toggleDashSidebar()"><span class="si">💳</span>Vista Caja</div>
+    <div class="dash-sb-item" onclick="setRT('sem');V('reporte');toggleDashSidebar()"><span class="si">📅</span>Semanal</div>
+    <div class="dash-sb-item" onclick="setRT('ano');V('reporte');toggleDashSidebar()"><span class="si"></span>Anual</div>
+    <div class="dash-sb-section">Meseros</div>
+    <div style="padding:10px 14px">
+      <div id="admin-meseros-lista" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px">
+        <input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key==='Enter')agregarMeseroAdmin()"
+          style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none">
+        <button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button>
+      </div>
+    </div>
+    <div class="dash-sb-section">Sistema</div>
+    <div class="dash-sb-item" onclick="toggleDashSidebar();doLogout()"><span class="si">🔐</span>Cambiar usuario</div>
+  </div>
+</div>
+
 <!-- DASHBOARD ADMIN -->
 <div class="view" id="view-dashboard">
   <div class="dash-wrap" style="padding-left:0">
     <!-- contenido sin sidebar aqui -->
-    <div id="dash-sidebar" style="position:fixed;top:0;left:-280px;width:260px;height:100vh;background:var(--ink);z-index:9990;display:flex;flex-direction:column;transition:left .25s ease;box-shadow:4px 0 20px rgba(0,0,0,.4)">
-      <div style="position:fixed;inset:0;z-index:9989;display:none;background:rgba(0,0,0,.4)" id="dash-overlay" onclick="toggleDashSidebar()"></div>
-      <div class="dash-sb-header">
-        <div class="dash-sb-title">🌿 Jardín de Ana</div>
-        <div style="font-size:10px;color:var(--gold3);margin-top:2px" id="dash-sb-fecha"></div>
-      </div>
-      <div style="overflow-y:auto;flex:1">
-        <div class="dash-sb-section">Reportes</div>
-        <div class="dash-sb-item" onclick="V('reporte');toggleDashSidebar()"><span class="si">📊</span>Reporte de ventas</div>
-        <div class="dash-sb-item" onclick="V('corte');toggleDashSidebar()"><span class="si">🗂</span>Corte de caja</div>
-        <div class="dash-sb-section">Administración</div>
-        <div class="dash-sb-item" onclick="V('finanzas');toggleDashSidebar()"><span class="si">💰</span>Finanzas</div>
-        <div class="dash-sb-item" onclick="V('ingredientes');toggleDashSidebar()"><span class="si">💲</span>Costos</div>
-        <div class="dash-sb-item" onclick="V('inventario');toggleDashSidebar()"><span class="si">📦</span>Inventario</div>
-        <div class="dash-sb-section">Operación</div>
-        <div class="dash-sb-item" onclick="V('mesero');toggleDashSidebar()"><span class="si">🧑</span>Vista Mesero</div>
-        <div class="dash-sb-item" onclick="V('cocina');toggleDashSidebar()"><span class="si">🍳</span>Vista Cocina</div>
-        <div class="dash-sb-item" onclick="V('caja');toggleDashSidebar()"><span class="si">💳</span>Vista Caja</div>
-        <div class="dash-sb-item" onclick="setRT('sem');V('reporte');toggleDashSidebar()"><span class="si">📅</span>Semanal</div>
-        <div class="dash-sb-item" onclick="setRT('ano');V('reporte');toggleDashSidebar()"><span class="si"></span>Anual</div>
-        <div class="dash-sb-section">Meseros</div>
-        <div style="padding:10px 14px">
-          <div id="admin-meseros-lista" style="margin-bottom:8px"></div>
-          <div style="display:flex;gap:6px">
-            <input id="admin-mesero-input" type="text" placeholder="Nombre..." onkeydown="if(event.key==='Enter')agregarMeseroAdmin()"
-              style="flex:1;padding:7px 10px;border:1.5px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:12px;outline:none">
-            <button onclick="agregarMeseroAdmin()" style="padding:7px 12px;background:var(--gold);color:var(--ink);border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button>
-          </div>
-        </div>
-        <div class="dash-sb-section">Sistema</div>
-        <div class="dash-sb-item" onclick="toggleDashSidebar();doLogout()"><span class="si">🔐</span>Cambiar usuario</div>
-      </div>
-    </div>
 
     <!-- Contenido principal -->
     <div class="dash-main" id="dash-main" style="padding-left:14px">
@@ -1533,8 +1534,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=28"></script>
-<script src="js/app.js?v=28"></script>
+<script src="js/globals.js?v=29"></script>
+<script src="js/app.js?v=29"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
