@@ -5487,40 +5487,20 @@ function selRole(role){
   updDots();
 }
 function cancelPin(){pinRole=null;pinVal='';gi('pin-box').style.display='none';updDots();}
-function _showPinError(msg){
-  var el=gi('pin-error');
-  if(!el)return;
-  el.textContent=msg||'PIN incorrecto';
-  el.style.display='block';
-  setTimeout(function(){if(el)el.style.display='none';},2000);
-}
 function pinKey(k){
-  if(!pinRole){gi('pin-box').style.display='flex';_showPinError('Selecciona un rol primero');return;}
-  if(pinVal.length>=4)return;
-  if(_pinBloqueadoHasta>0&&Date.now()<_pinBloqueadoHasta){
-    _showPinError('Bloqueado '+Math.ceil((_pinBloqueadoHasta-Date.now())/1000)+'s');
-    return;
-  }
+  if(!pinRole||pinVal.length>=4)return;
   pinVal+=k;updDots();
   if(pinVal.length===4){
     setTimeout(function(){
-      var correcto=_PINS[pinRole]&&pinVal===_PINS[pinRole];
-      if(correcto){
-        _pinIntentos=0;_pinBloqueadoHasta=0;
+      if(pinVal===_PINS[pinRole]){
         var rol=pinRole;
         pinRole=null;pinVal='';
         if(window._loginConPin) window._loginConPin(rol);
         notice('Bienvenido — '+ROLE_LABELS[rol],'var(--green)');
       } else {
-        _pinIntentos++;
+        gi('pin-error').style.display='block';
         pinVal='';updDots();
-        if(_pinIntentos>=3){
-          _pinBloqueadoHasta=Date.now()+30000;
-          _pinIntentos=0;
-          _showPinError('3 intentos fallidos — espera 30s');
-        } else {
-          _showPinError('PIN incorrecto ('+_pinIntentos+'/3)');
-        }
+        setTimeout(function(){gi('pin-error').style.display='none';},1500);
       }
     },150);
   }
