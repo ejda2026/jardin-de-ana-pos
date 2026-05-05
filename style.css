@@ -1,17 +1,17 @@
 ﻿@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lora:wght@300;400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --ink:#1a1512;--ink2:#4a3f30;--ink3:#8c7d6a;
+  --ink:#1e3a1e;--ink2:#3d6b3a;--ink3:#6b9460;
   --mono:'Courier New',Courier,monospace;
-  --cream:#fdfbf7;--cream2:#f5f1e8;--cream3:#e8e1d3;
-  --gold:#c9a84c;--gold2:#e8c97a;--gold3:#f7efd8;
-  --green:#2c5f3f;--green2:#3a8a5c;--green3:#d5f5e3;
+  --cream:#f8fdf6;--cream2:#eef7ea;--cream3:#cfe3c9;
+  --gold:#5e9c52;--gold2:#7ab56a;--gold3:#e4f3df;
+  --green:#2c6b3f;--green2:#3a9a5c;--green3:#d0f0df;
   --red:#b8453d;--red3:#fde8e8;
-  --orange:#d35400;--orange3:#fdebd0;
+  --orange:#c07030;--orange3:#fdebd0;
   --blue:#1a5276;--blue2:#2980b9;--blue3:#d6eaf8;
   --r:12px;
-  --shadow:0 2px 12px rgba(26,21,18,0.08);
-  --shadow-lg:0 8px 32px rgba(26,21,18,0.12);
+  --shadow:0 2px 12px rgba(30,58,30,0.08);
+  --shadow-lg:0 8px 32px rgba(30,58,30,0.12);
 }
 body{
   font-family:\'Lora\',sans-serif;
@@ -33,7 +33,7 @@ body{
 .sync-label{font-size:11px;color:var(--cream3);font-weight:500;letter-spacing:0.02em}
 
 .nav{
-  background:linear-gradient(135deg, var(--ink) 0%, #261f19 100%);
+  background:linear-gradient(135deg, #1e3a1e 0%, #2d5228 100%);
   display:flex;align-items:center;
   padding:0 20px;height:60px;gap:6px;
   position:sticky;top:0;z-index:100;
