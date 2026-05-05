@@ -166,7 +166,7 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 .lrole-card{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
   padding:22px 16px;cursor:pointer;border-radius:16px;
-  background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.4);
+  background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);
   transition:background .2s,border-color .2s,transform .15s;
   color:#fff;font-family:'Fraunces',serif;backdrop-filter:blur(6px);
 }
@@ -177,10 +177,10 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 </style>
 <div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:#7a9b6a">
   <div id="login-bg" style="position:absolute;inset:0;background-image:url('login-bg.jpg');background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s;filter:brightness(1.08)"></div>
-  <div style="position:absolute;inset:0;background:rgba(20,40,20,.08)"></div>
+  <div style="position:absolute;inset:0;background:rgba(10,25,10,.28)"></div>
 
   <div class="lg-brand" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px">
-    <img src="favicon.png" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.6);box-shadow:0 0 28px rgba(0,0,0,.2)" onerror="this.style.display='none'">
+    <img src="favicon.png" style="width:220px;height:auto;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,.35))" onerror="this.style.display='none'">
     <div style="font-family:'Fraunces',serif;font-size:30px;color:#fff;letter-spacing:.02em;text-shadow:0 2px 8px rgba(0,0,0,.2)">Jardin de Ana</div>
     <div style="font-size:11px;color:rgba(255,255,255,.8);letter-spacing:.12em;text-transform:uppercase">Selecciona tu rol</div>
   </div>
@@ -1603,8 +1603,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=39"></script>
-<script src="js/app.js?v=39"></script>
+<script src="js/globals.js?v=40"></script>
+<script src="js/app.js?v=40"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
