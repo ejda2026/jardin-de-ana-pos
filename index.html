@@ -1411,27 +1411,23 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   <div class="notif-card" style="max-width:420px;width:92%;max-height:90vh;overflow-y:auto">
     <div style="font-family:\'Playfair Display\',serif;font-size:20px;margin-bottom:16px;text-align:center" id="mod-titulo">Personalizar</div>
     
-    <!-- EXTRAS -->
-    <div id="mod-extras-section" style="display:none;margin-bottom:16px">
-      <div id="mod-extras-label" style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink2)">Extras adicionales</div>
-      <div id="mod-extras-list"></div>
-    </div>
-    
-    <!-- SIN INGREDIENTES -->
-    <div id="mod-sin-section" style="display:none;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink2)">Excluir ingredientes</div>
-      <div id="mod-sin-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-    </div>
-    
     <!-- TÉRMINOS -->
     <div id="mod-terminos-section" style="display:none;margin-bottom:16px">
       <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink2)">Método de preparación</div>
       <div id="mod-terminos-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
-    
+
+    <!-- SIN INGREDIENTES -->
+    <div id="mod-sin-section" style="display:none;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--ink2)">Excluir ingredientes</div>
+      <div id="mod-sin-list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
+    <!-- hidden, kept for JS compat -->
+    <div id="mod-extras-section" style="display:none"><div id="mod-extras-label"></div><div id="mod-extras-list"></div></div>
+
     <!-- EXTRAS INGREDIENTES -->
     <div style="margin-bottom:14px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink2)">Extras +$15 c/u</div>
       <div id="mod-frecuentes" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
       <input id="mod-extras-busq" type="text" placeholder="Buscar ingrediente..." autocomplete="off"
         style="width:100%;padding:9px 12px;border:1.5px solid var(--cream3);border-radius:9px;font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px"
@@ -1534,8 +1530,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=30"></script>
-<script src="js/app.js?v=30"></script>
+<script src="js/globals.js?v=31"></script>
+<script src="js/app.js?v=31"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";

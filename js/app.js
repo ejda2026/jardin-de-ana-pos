@@ -2574,27 +2574,11 @@ function abrirModificadores(nombre, precio, esBev){
   gi('mod-extras-seleccionados').innerHTML='';
   gi('mod-nota-input').value='';
   actualizarPrecioMod();
-  // Frecuentes por platillo
-  var FRECUENTES={
-    'Huevo':['Tocino','Jamón','Champiñones','Aguacate'],
-    'Omelette':['Tocino','Espinaca','Champiñones','Queso extra'],
-    'Ensalada':['Pollo','Atún','Aguacate','Queso extra'],
-    'Sandwich':['Aguacate','Queso extra','Tocino'],
-    'Hot cake':['Fresas','Plátano','Nutella','Miel extra'],
-    'Burrito':['Aguacate','Queso extra','Crema'],
-    'Tamal':['Crema','Queso'],
-  };
   var frecEl=gi('mod-frecuentes');
   if(frecEl){
-    var frec=[];
-    Object.keys(FRECUENTES).forEach(function(k){ if(item.n.includes(k)) frec=FRECUENTES[k]; });
-    if(frec.length){
-      frecEl.innerHTML='<div style="font-size:11px;color:var(--ink3);margin-bottom:4px;width:100%">Frecuentes</div>'+frec.map(function(n){
-        return '<button onclick="toggleExtraMod(\''+n+'\')" style="padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gold);background:var(--gold3);color:var(--ink);font-weight:600">+'+n+'</button>';
-      }).join('');
-    } else {
-      frecEl.innerHTML='';
-    }
+    frecEl.innerHTML=['Jamón','Tocino'].map(function(n){
+      return '<button onclick="toggleExtraMod(\''+n+'\')" style="padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gold);background:var(--gold3);color:var(--ink);font-weight:600">+'+n+'</button>';
+    }).join('');
   }
 
   // Mostrar modal
