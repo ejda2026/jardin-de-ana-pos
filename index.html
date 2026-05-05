@@ -180,7 +180,7 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   <div style="position:absolute;inset:0;background:rgba(10,25,10,.28)"></div>
 
   <div class="lg-brand" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px">
-    <img src="favicon.png?v=42" style="width:220px;height:auto;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,.35))" onerror="this.style.display='none'">
+    <img src="favicon.png?v=43" style="width:220px;height:auto;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,.35))" onerror="this.style.display='none'">
     <div style="font-size:11px;color:rgba(255,255,255,.8);letter-spacing:.12em;text-transform:uppercase">Selecciona tu rol</div>
   </div>
 
@@ -381,8 +381,9 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   </div>
 </div>
 
+<div style="position:fixed;inset:0;z-index:9989;display:none;background:rgba(0,0,0,.4)" id="dash-overlay" onclick="toggleDashSidebar()"></div>
 <div id="dash-sidebar" style="position:fixed;top:0;left:-280px;width:260px;height:100vh;background:var(--ink);z-index:9990;display:flex;flex-direction:column;transition:left .25s ease;box-shadow:4px 0 20px rgba(0,0,0,.4)">
-  <div style="position:fixed;inset:0;z-index:9989;display:none;background:rgba(0,0,0,.4)" id="dash-overlay" onclick="toggleDashSidebar()"></div>
+  <button onclick="toggleDashSidebar()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.1);border:none;border-radius:8px;color:var(--gold3);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1" title="Cerrar">←</button>
   <div class="dash-sb-header">
     <div class="dash-sb-title">🌿 Jardín de Ana</div>
     <div style="font-size:10px;color:var(--gold3);margin-top:2px" id="dash-sb-fecha"></div>
@@ -1608,8 +1609,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=42"></script>
-<script src="js/app.js?v=42"></script>
+<script src="js/globals.js?v=43"></script>
+<script src="js/app.js?v=43"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
@@ -1707,6 +1708,8 @@ window._loginConPin = function(rol){
   window._rolActual = rol;
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-wrap').style.display = 'block';
+  var _sb=document.getElementById('dash-sidebar');var _ov=document.getElementById('dash-overlay');
+  if(_sb)_sb.style.left='-280px';if(_ov)_ov.style.display='none';
   aplicarRol(rol);
   window.V(ROL_INICIO[rol]);
   if(rol === 'admin') purgarVentasAntiguas();
