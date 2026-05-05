@@ -209,7 +209,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   </div>
 
   <div id="pin-box" class="lg-pin" style="display:none;position:relative;flex-direction:column;align-items:center;gap:12px">
-    <div id="pin-role-lbl" style="font-size:13px;color:var(--gold3)"></div>
+    <button onclick="cancelPin()" style="position:absolute;top:-8px;left:-8px;background:transparent;border:none;color:var(--gold3);font-size:22px;cursor:pointer;padding:4px 8px;line-height:1" title="Volver">←</button>
+    <div id="pin-role-lbl" style="font-size:13px;color:var(--gold3);margin-top:8px"></div>
     <div id="pin-dots" style="display:flex;gap:10px;margin-bottom:4px">
       <div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div>
     </div>
@@ -1602,8 +1603,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=35"></script>
-<script src="js/app.js?v=35"></script>
+<script src="js/globals.js?v=36"></script>
+<script src="js/app.js?v=36"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";

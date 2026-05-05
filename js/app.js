@@ -5448,12 +5448,24 @@ var _pinIntentos=0,_pinBloqueadoHasta=0;
 
 function selRole(role){
   pinRole=role;pinVal='';
+  var cards=document.querySelector('.lg-cards');
+  var brand=document.querySelector('.lg-brand');
+  if(cards)cards.style.display='none';
+  if(brand)brand.style.display='none';
   gi('pin-box').style.display='flex';
   gi('pin-role-lbl').textContent='PIN de '+ROLE_LABELS[role];
   var er=gi('pin-error');if(er){er.style.display='none';er.textContent='PIN incorrecto';}
   updDots();
 }
-function cancelPin(){pinRole=null;pinVal='';gi('pin-box').style.display='none';updDots();}
+function cancelPin(){
+  pinRole=null;pinVal='';
+  var cards=document.querySelector('.lg-cards');
+  var brand=document.querySelector('.lg-brand');
+  if(cards)cards.style.display='grid';
+  if(brand)brand.style.display='flex';
+  gi('pin-box').style.display='none';
+  updDots();
+}
 function pinKey(k){
   if(!pinRole||pinVal.length>=4)return;
   pinVal+=k;updDots();
