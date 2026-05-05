@@ -360,7 +360,8 @@ var ME = MENU.map(function(item){
   }
   else if(item.n.includes('Quesadillas')){
     mods = {
-      terminos:['Harina','Maíz']
+      terminos:['Harina','Maíz'],
+      proteina:['Jamón','Queso']
     };
   }
   else if(item.n.includes('Sandwich')){
@@ -2493,7 +2494,8 @@ var modState = {
   itemMods: {},
   extrasSeleccionados: [],
   sinSeleccionados: [],
-  terminoSeleccionado: null
+  terminoSeleccionado: null,
+  proteinaSeleccionada: null
 };
 
 function abrirModificadores(nombre, precio, esBev){
@@ -2511,7 +2513,8 @@ function abrirModificadores(nombre, precio, esBev){
     itemMods: item.mods,
     extrasSeleccionados: [],
     sinSeleccionados: [],
-    terminoSeleccionado: null
+    terminoSeleccionado: null,
+    proteinaSeleccionada: null
   };
   
   // Actualizar título
@@ -2552,6 +2555,20 @@ function abrirModificadores(nombre, precio, esBev){
     terminosSection.style.display = 'none';
   }
   
+  // Renderizar proteína
+  var protSection = gi('mod-proteina-section');
+  var protList = gi('mod-proteina-list');
+  if(item.mods.proteina && item.mods.proteina.length > 0){
+    protSection.style.display = 'block';
+    var html = '';
+    item.mods.proteina.forEach(function(p, idx){
+      html += '<button onclick="seleccionarProteina('+idx+')" id="prot-'+idx+'" style="padding:10px 16px;background:var(--cream);border:1px solid var(--cream3);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s">'+p+'</button>';
+    });
+    protList.innerHTML = html;
+  } else {
+    protSection.style.display = 'none';
+  }
+
   // Actualizar precio
   _modExtras=[];
   gi('mod-extras-busq').value='';
@@ -2631,24 +2648,27 @@ function toggleSin(idx){
 }
 
 function seleccionarTermino(idx){
-  // Deseleccionar todos
   if(modState.itemMods.terminos){
     modState.itemMods.terminos.forEach(function(t, i){
       var btn = gi('termino-'+i);
-      if(btn){
-        btn.style.borderColor = 'var(--cream3)';
-        btn.style.background = 'var(--cream)';
-        btn.style.color = 'var(--ink)';
-      }
+      if(btn){ btn.style.borderColor='var(--cream3)'; btn.style.background='var(--cream)'; btn.style.fontWeight='500'; }
     });
   }
-  
-  // Seleccionar el clickeado
   modState.terminoSeleccionado = idx;
-  gi('termino-'+idx).style.borderColor = 'var(--gold)';
-  gi('termino-'+idx).style.background = 'var(--gold3)';
-  gi('termino-'+idx).style.color = 'var(--ink)';
-  gi('termino-'+idx).style.fontWeight = '600';
+  var b=gi('termino-'+idx);
+  b.style.borderColor='var(--gold)'; b.style.background='var(--gold3)'; b.style.fontWeight='700';
+}
+
+function seleccionarProteina(idx){
+  if(modState.itemMods.proteina){
+    modState.itemMods.proteina.forEach(function(p, i){
+      var btn = gi('prot-'+i);
+      if(btn){ btn.style.borderColor='var(--cream3)'; btn.style.background='var(--cream)'; btn.style.fontWeight='500'; }
+    });
+  }
+  modState.proteinaSeleccionada = idx;
+  var b=gi('prot-'+idx);
+  b.style.borderColor='var(--gold)'; b.style.background='var(--gold3)'; b.style.fontWeight='700';
 }
 
 function actualizarPrecioMod(){
@@ -2680,10 +2700,11 @@ function agregarConModificadores(){
   var nombreCompleto = modState.itemNombre;
   var modificaciones = [];
   
-  // Agregar término si existe
   if(modState.terminoSeleccionado !== null && modState.itemMods.terminos){
-    var termino = modState.itemMods.terminos[modState.terminoSeleccionado];
-    modificaciones.push(termino);
+    modificaciones.push(modState.itemMods.terminos[modState.terminoSeleccionado]);
+  }
+  if(modState.proteinaSeleccionada !== null && modState.itemMods.proteina){
+    modificaciones.push(modState.itemMods.proteina[modState.proteinaSeleccionada]);
   }
   
   // Agregar extras
