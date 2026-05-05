@@ -1457,6 +1457,27 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   </div>
 </div>
 
+<div class="notif-modal" id="modal-nota" style="z-index:9999;display:none">
+  <div class="notif-overlay" onclick="cerrarModalNota()"></div>
+  <div class="notif-card" style="max-width:380px;width:92%;max-height:85vh;overflow-y:auto">
+    <div style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:14px;text-align:center" id="modal-nota-nombre"></div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink2)">Extras +$15 c/u</div>
+    <input id="modal-nota-busq" type="text" placeholder="Buscar ingrediente..." autocomplete="off"
+      style="width:100%;padding:9px 12px;border:1.5px solid var(--cream3);border-radius:9px;font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px"
+      oninput="filtrarExtrasNota(this.value)">
+    <div id="modal-nota-sugerencias" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;max-height:100px;overflow-y:auto"></div>
+    <div id="modal-nota-seleccionados" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink2)">Nota (opcional)</div>
+    <textarea id="modal-nota-input" placeholder="Ej: sin cebolla, bien cocido, extra picante..." rows="2"
+      style="width:100%;padding:10px 12px;border:1.5px solid var(--cream3);border-radius:10px;font-family:'Lora',sans-serif;font-size:13px;outline:none;resize:none;box-sizing:border-box;margin-bottom:14px"
+      onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--cream3)'"></textarea>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px">
+      <button onclick="cerrarModalNota()" style="padding:14px;background:var(--cream2);border:1px solid var(--cream3);border-radius:10px;cursor:pointer;font-size:13px">Cancelar</button>
+      <button onclick="confirmarNota()" style="padding:14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;font-family:'Playfair Display',serif">Guardar nota</button>
+    </div>
+  </div>
+</div>
+
 <div class="tmodal" id="tmodal">
   <div style="display:flex;flex-direction:column;align-items:center">
     <div class="tpt"></div>
@@ -1530,8 +1551,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=31"></script>
-<script src="js/app.js?v=31"></script>
+<script src="js/globals.js?v=32"></script>
+<script src="js/app.js?v=32"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";

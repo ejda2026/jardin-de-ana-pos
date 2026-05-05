@@ -357,9 +357,13 @@ var ME = MENU.map(function(item){
       terminos:['Revueltos','Estrellados','A la mexicana']
     };
   }
-  else if(item.n.includes('Sandwich') || item.n.includes('Quesadillas')){
+  else if(item.n.includes('Quesadillas')){
     mods = {
-      extras:[{n:'Aguacate',p:15},{n:'Queso extra',p:15}],
+      terminos:['Harina','Maíz']
+    };
+  }
+  else if(item.n.includes('Sandwich')){
+    mods = {
       sin:['Cebolla','Jitomate']
     };
   }
