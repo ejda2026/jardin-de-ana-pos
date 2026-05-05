@@ -1735,6 +1735,7 @@ window.doLogout = function(){
   }catch(e){ _unsubs={}; }
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-wrap').style.display = 'none';
+  if(typeof cancelPin === 'function') cancelPin();
 };
 
 if(window._sessionRestaurar && window._sessionRestaurar.rol){
