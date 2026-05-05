@@ -2516,28 +2516,7 @@ function abrirModificadores(nombre, precio, esBev){
   // Actualizar título
   gi('mod-titulo').textContent = nombre;
   
-  // Renderizar extras
-  var extrasSection = gi('mod-extras-section');
-  var extrasList = gi('mod-extras-list');
-  if(item.mods.extras && item.mods.extras.length > 0){
-    extrasSection.style.display = 'block';
-    gi('mod-extras-label').textContent = item.mods.extrasLabel || 'Extras adicionales';
-    var html = '';
-    item.mods.extras.forEach(function(extra, idx){
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--cream);border:1px solid var(--cream3);border-radius:8px;margin-bottom:6px;cursor:pointer" onclick="toggleExtra('+idx+')" id="extra-'+idx+'">'+
-        '<div>'+
-          '<div style="font-size:13px;font-weight:500">'+extra.n+'</div>'+
-          (extra.p>0?'<div style="font-size:11px;color:var(--ink3)">+'+fmt(extra.p)+'</div>':'')+
-        '</div>'+
-        '<div class="mod-checkbox" id="extra-check-'+idx+'">'+
-          '<div class="mod-checkbox-inner"></div>'+
-        '</div>'+
-      '</div>';
-    });
-    extrasList.innerHTML = html;
-  } else {
-    extrasSection.style.display = 'none';
-  }
+  gi('mod-extras-section').style.display = 'none';
   
   // Renderizar "sin"
   var sinSection = gi('mod-sin-section');
