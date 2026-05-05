@@ -347,8 +347,9 @@ var ME = MENU.map(function(item){
   // Agregar modificadores según el platillo
   if(item.n.includes('Chilaquiles')){
     mods = {
-      extrasLabel:'Salsa',
-      extras:[{n:'Roja',p:0},{n:'Verde',p:0},{n:'Mixtos',p:0}]
+      terminos:['Roja','Verde','Mixtos'],
+      terminosLabel:'Salsa',
+      noFrecuentes:true
     };
   }
   else if(item.n.includes('Huevo')){
@@ -2539,6 +2540,7 @@ function abrirModificadores(nombre, precio, esBev){
   var terminosList = gi('mod-terminos-list');
   if(item.mods.terminos && item.mods.terminos.length > 0){
     terminosSection.style.display = 'block';
+    terminosSection.querySelector('div').textContent = item.mods.terminosLabel || 'Método de preparación';
     var html = '';
     item.mods.terminos.forEach(function(termino, idx){
       html += '<button onclick="seleccionarTermino('+idx+')" id="termino-'+idx+'" style="padding:10px 16px;background:var(--cream);border:1px solid var(--cream3);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s">'+
@@ -2559,9 +2561,14 @@ function abrirModificadores(nombre, precio, esBev){
   actualizarPrecioMod();
   var frecEl=gi('mod-frecuentes');
   if(frecEl){
-    frecEl.innerHTML=['Jamón','Tocino'].map(function(n){
-      return '<button onclick="toggleExtraMod(\''+n+'\')" style="padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gold);background:var(--gold3);color:var(--ink);font-weight:600">+'+n+'</button>';
-    }).join('');
+    if(item.mods.noFrecuentes){
+      frecEl.style.display='none';
+    } else {
+      frecEl.style.display='';
+      frecEl.innerHTML=['Jamón','Tocino'].map(function(n){
+        return '<button onclick="toggleExtraMod(\''+n+'\')" style="padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1.5px solid var(--gold);background:var(--gold3);color:var(--ink);font-weight:600">+'+n+'</button>';
+      }).join('');
+    }
   }
 
   // Mostrar modal
