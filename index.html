@@ -176,8 +176,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 .lrole-sub{font-size:10px;color:rgba(255,255,255,.75);letter-spacing:.04em;text-align:center}
 </style>
 <div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:#7a9b6a">
-  <div id="login-bg" style="position:absolute;inset:0;background-image:url('login-bg.jpg');background-size:cover;background-position:center;opacity:0;transition:opacity 1s"></div>
-  <div style="position:absolute;inset:0;background:rgba(20,40,20,.25)"></div>
+  <div id="login-bg" style="position:absolute;inset:0;background-image:url('login-bg.jpg');background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s;filter:brightness(1.08)"></div>
+  <div style="position:absolute;inset:0;background:rgba(20,40,20,.08)"></div>
 
   <div class="lg-brand" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px">
     <img src="favicon.png" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.6);box-shadow:0 0 28px rgba(0,0,0,.2)" onerror="this.style.display='none'">
@@ -1603,8 +1603,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=38"></script>
-<script src="js/app.js?v=38"></script>
+<script src="js/globals.js?v=39"></script>
+<script src="js/app.js?v=39"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
