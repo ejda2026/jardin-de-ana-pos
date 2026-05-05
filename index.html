@@ -157,16 +157,58 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 </style>
 
 <!-- PANTALLA DE LOGIN -->
-<div id="login-screen" style="display:flex;position:fixed;inset:0;background:linear-gradient(160deg,#2a1f14 0%,#1a1208 60%,#0f0a05 100%);z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:20px">
-  <div style="font-family:'Fraunces',serif;font-size:28px;color:var(--gold2);margin-bottom:8px">Jardin de Ana</div>
-  <div style="font-size:12px;color:var(--gold3);margin-bottom:16px">Selecciona tu rol</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:280px">
-    <button onclick="selRole('mesero')" style="padding:18px 10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:var(--gold2);font-family:'Fraunces',serif;font-size:14px;cursor:pointer">Mesero</button>
-    <button onclick="selRole('cocina')" style="padding:18px 10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:var(--gold2);font-family:'Fraunces',serif;font-size:14px;cursor:pointer">Cocina</button>
-    <button onclick="selRole('caja')" style="padding:18px 10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:var(--gold2);font-family:'Fraunces',serif;font-size:14px;cursor:pointer">Caja</button>
-    <button onclick="selRole('admin')" style="padding:18px 10px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;color:var(--gold2);font-family:'Fraunces',serif;font-size:14px;cursor:pointer">Administración</button>
+<style>
+@keyframes lgFadeIn{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes lgCardsIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.lg-brand{animation:lgFadeIn .9s ease both}
+.lg-cards{animation:lgCardsIn .8s ease .5s both}
+.lg-pin{animation:lgCardsIn .5s ease both}
+.lrole-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  padding:22px 16px;cursor:pointer;border-radius:16px;
+  background:rgba(255,255,255,.07);border:1.5px solid rgba(201,168,76,.25);
+  transition:background .2s,border-color .2s,transform .15s;
+  color:var(--gold2);font-family:'Fraunces',serif;
+}
+.lrole-card:hover{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.6);transform:translateY(-2px)}
+.lrole-icon{width:48px;height:48px;border-radius:50%;background:rgba(201,168,76,.15);border:1.5px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:20px;color:var(--gold2)}
+.lrole-title{font-size:15px;font-weight:600}
+.lrole-sub{font-size:10px;color:var(--gold3);letter-spacing:.04em;text-align:center}
+</style>
+<div id="login-screen" style="display:flex;position:fixed;inset:0;z-index:99999;flex-direction:column;align-items:center;justify-content:center;gap:24px;background:linear-gradient(160deg,#2a1f14 0%,#1a1208 60%,#0f0a05 100%)">
+  <div id="login-bg" style="position:absolute;inset:0;background-image:url('login-bg.jpg');background-size:cover;background-position:center;opacity:0;transition:opacity 1s"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(15,8,2,.82) 0%,rgba(10,6,2,.88) 100%)"></div>
+
+  <div class="lg-brand" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:10px">
+    <img src="favicon.png" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(201,168,76,.4);box-shadow:0 0 28px rgba(201,168,76,.2)" onerror="this.style.display='none'">
+    <div style="font-family:'Fraunces',serif;font-size:30px;color:var(--gold2);letter-spacing:.02em">Jardin de Ana</div>
+    <div style="font-size:11px;color:var(--gold3);letter-spacing:.12em;text-transform:uppercase">Selecciona tu rol</div>
   </div>
-  <div id="pin-box" style="display:none;flex-direction:column;align-items:center;gap:12px;margin-top:8px">
+
+  <div class="lg-cards" style="position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;width:300px">
+    <button class="lrole-card" onclick="selRole('mesero')">
+      <div class="lrole-icon">M</div>
+      <div class="lrole-title">Mesero</div>
+      <div class="lrole-sub">Tomar órdenes</div>
+    </button>
+    <button class="lrole-card" onclick="selRole('cocina')">
+      <div class="lrole-icon">C</div>
+      <div class="lrole-title">Cocina</div>
+      <div class="lrole-sub">Ver pedidos</div>
+    </button>
+    <button class="lrole-card" onclick="selRole('caja')">
+      <div class="lrole-icon">$</div>
+      <div class="lrole-title">Caja</div>
+      <div class="lrole-sub">Cobrar mesas</div>
+    </button>
+    <button class="lrole-card" onclick="selRole('admin')">
+      <div class="lrole-icon">A</div>
+      <div class="lrole-title">Admin</div>
+      <div class="lrole-sub">Panel completo</div>
+    </button>
+  </div>
+
+  <div id="pin-box" class="lg-pin" style="display:none;position:relative;flex-direction:column;align-items:center;gap:12px">
     <div id="pin-role-lbl" style="font-size:13px;color:var(--gold3)"></div>
     <div id="pin-dots" style="display:flex;gap:10px;margin-bottom:4px">
       <div class="pdot"></div><div class="pdot"></div><div class="pdot"></div><div class="pdot"></div>
@@ -180,6 +222,14 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
     <div id="pin-error" style="font-size:11px;color:#f1948a;display:none">PIN incorrecto</div>
   </div>
 </div>
+<script>
+(function(){
+  var bg=document.getElementById('login-bg');
+  var img=new Image();
+  img.onload=function(){bg.style.opacity='1';};
+  img.src='login-bg.jpg';
+})();
+</script>
 
 <style>
 .pdot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2);transition:background .15s}
@@ -1552,8 +1602,8 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/globals.js?v=34"></script>
-<script src="js/app.js?v=34"></script>
+<script src="js/globals.js?v=35"></script>
+<script src="js/app.js?v=35"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, update, remove, get, query, orderByKey, endBefore, runTransaction } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
