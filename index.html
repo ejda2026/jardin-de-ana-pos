@@ -185,26 +185,10 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   </div>
 
   <div class="lg-cards" style="position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px;width:300px">
-    <button class="lrole-card" onclick="selRole('mesero')">
-      <div class="lrole-icon">M</div>
-      <div class="lrole-title">Mesero</div>
-      <div class="lrole-sub">Tomar órdenes</div>
-    </button>
-    <button class="lrole-card" onclick="selRole('cocina')">
-      <div class="lrole-icon">C</div>
-      <div class="lrole-title">Cocina</div>
-      <div class="lrole-sub">Ver pedidos</div>
-    </button>
-    <button class="lrole-card" onclick="selRole('caja')">
-      <div class="lrole-icon">$</div>
-      <div class="lrole-title">Caja</div>
-      <div class="lrole-sub">Cobrar mesas</div>
-    </button>
-    <button class="lrole-card" onclick="selRole('admin')">
-      <div class="lrole-icon">A</div>
-      <div class="lrole-title">Admin</div>
-      <div class="lrole-sub">Panel completo</div>
-    </button>
+    <button class="lrole-card" onclick="selRole('mesero')"><div class="lrole-title">Mesero</div></button>
+    <button class="lrole-card" onclick="selRole('cocina')"><div class="lrole-title">Cocina</div></button>
+    <button class="lrole-card" onclick="selRole('caja')"><div class="lrole-title">Caja</div></button>
+    <button class="lrole-card" onclick="selRole('admin')"><div class="lrole-title">Admin</div></button>
   </div>
 
   <div id="pin-box" class="lg-pin" style="display:none;position:relative;flex-direction:column;align-items:center;gap:12px">
@@ -1783,10 +1767,7 @@ window.mostrarMeseroHero = function(){
     cards.innerHTML = meseros.map(function(m, i){
       var nombre = typeof m === 'string' ? m : m.nombre;
       var ini = nombre.charAt(0).toUpperCase();
-      return '<button onclick="heroSelMesero('+i+')" class="lrole-card" style="padding:18px 10px">'
-        +'<div class="lrole-icon">'+ini+'</div>'
-        +'<div class="lrole-title" style="font-size:13px">'+nombre+'</div>'
-        +'</button>';
+      return '<button onclick="heroSelMesero('+i+')" class="lrole-card"><div class="lrole-title" style="font-size:15px">'+nombre+'</div></button>';
     }).join('');
   }
 };
