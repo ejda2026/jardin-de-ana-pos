@@ -171,7 +171,7 @@ button:active,.mitem:active,.mbtn:active,.ctab:active,.vnbtn:active,.tkbtn:activ
   color:#fff;font-family:'Fraunces',serif;backdrop-filter:blur(6px);
 }
 .lrole-card:hover{background:rgba(255,255,255,.35);border-color:rgba(255,255,255,.7);transform:translateY(-2px)}
-.lrole-icon{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.25);border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:20px;color:#fff}
+.lrole-icon{font-family:'Fraunces',serif;font-size:28px;color:#fff}
 .lrole-title{font-size:18px;font-weight:800;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.3)}
 .lrole-sub{font-size:11px;font-weight:600;color:rgba(255,255,255,.9);letter-spacing:.04em;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.25)}
 </style>
@@ -1784,7 +1784,7 @@ window.mostrarMeseroHero = function(){
       var nombre = typeof m === 'string' ? m : m.nombre;
       var ini = nombre.charAt(0).toUpperCase();
       return '<button onclick="heroSelMesero('+i+')" class="lrole-card" style="padding:18px 10px">'
-        +'<div class="lrole-icon" style="font-size:20px;width:44px;height:44px;line-height:44px">'+ini+'</div>'
+        +'<div class="lrole-icon">'+ini+'</div>'
         +'<div class="lrole-title" style="font-size:13px">'+nombre+'</div>'
         +'</button>';
     }).join('');
