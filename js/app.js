@@ -345,10 +345,39 @@ var ME = MENU.map(function(item){
   var mods = {};
   
   // Agregar modificadores según el platillo
-  if(item.n.includes('Chilaquiles')){
+  if(item.n === 'Chilaquiles'){
     mods = {
       terminos:['Roja','Verde','Mixtos'],
       terminosLabel:'Salsa',
+      noFrecuentes:true
+    };
+  }
+  else if(item.n === 'Chilaquiles poblanos'){
+    mods = {
+      extras:[{n:'Tocino',p:20},{n:'Jamón',p:20},{n:'Champiñones',p:15}],
+      noFrecuentes:true
+    };
+  }
+  else if(item.n === 'Omelette' || item.n === 'Omelette de clara'){
+    mods = {
+      terminos:['Harina','Maíz'],
+      terminosLabel:'Tortillas',
+      proteina:['Con salsa','Sin salsa'],
+      proteinaLabel:'Salsa',
+      noFrecuentes:true
+    };
+  }
+  else if(item.n === 'Huevos divorciados'){
+    mods = {
+      extras:[{n:'Champiñones',p:15}],
+      terminos:['Revueltos','Estrellados','A la mexicana'],
+      noFrecuentes:true
+    };
+  }
+  else if(item.n === 'Huevos al gusto'){
+    mods = {
+      extras:[{n:'Champiñones',p:15}],
+      terminos:['Revueltos','Estrellados','A la mexicana'],
       noFrecuentes:true
     };
   }
@@ -358,20 +387,35 @@ var ME = MENU.map(function(item){
       terminos:['Revueltos','Estrellados','A la mexicana']
     };
   }
-  else if(item.n.includes('Quesadillas')){
+  else if(item.n === 'Machaca Sonorense'){
     mods = {
       terminos:['Harina','Maíz'],
-      proteina:['Jamón','Queso']
+      terminosLabel:'Tortillas'
     };
   }
-  else if(item.n.includes('Sandwich')){
+  else if(item.n === 'Molletes'){
     mods = {
-      sin:['Cebolla','Jitomate']
+      terminos:['Con salsa bandera','Sin salsa bandera'],
+      terminosLabel:'Salsa bandera'
     };
+  }
+  else if(item.n.includes('Quesadillas')){
+    mods = {
+      proteina:['Jamón','Tocino','Sencilla'],
+      noFrecuentes:true
+    };
+  }
+  else if(item.n === 'Ensalada de frutas'){
+    mods = null;
   }
   else if(item.n.includes('Ensalada')){
     mods = {
       extras:[{n:'Pollo',p:25},{n:'Atún',p:30},{n:'Aguacate',p:15}],
+      sin:['Cebolla','Jitomate']
+    };
+  }
+  else if(item.n.includes('Sandwich')){
+    mods = {
       sin:['Cebolla','Jitomate']
     };
   }
@@ -497,12 +541,6 @@ function validarAntesCobrar(mesaId){
   if(!o) return {ok: false, msg: 'Orden no encontrada'};
   if(!o.items || o.items.length===0) return {ok: false, msg: 'La orden está vacía'};
   var tieneFood = (o.items||[]).some(function(it){ return !it.esBev; });
-  if(tieneFood && o.status !== 'en_caja' && o.status !== 'lista'){
-    return {ok: false, msg: 'La orden aún está en cocina — espera a que esté lista'};
-  }
-  if(!tieneFood && o.status === 'abierta'){
-    return {ok: false, msg: 'La orden aún no ha sido enviada'};
-  }
   var bevsPend = (o.bebP||[]).filter(function(b){ return !b.done; });
   if(bevsPend.length > 0){
     return {ok: false, msg: 'Faltan '+bevsPend.length+' bebida(s) por entregar'};
@@ -2560,6 +2598,7 @@ function abrirModificadores(nombre, precio, esBev){
   var protList = gi('mod-proteina-list');
   if(item.mods.proteina && item.mods.proteina.length > 0){
     protSection.style.display = 'block';
+    gi('mod-proteina-label').textContent = item.mods.proteinaLabel || 'Proteína incluida';
     var html = '';
     item.mods.proteina.forEach(function(p, idx){
       html += '<button onclick="seleccionarProteina('+idx+')" id="prot-'+idx+'" style="padding:10px 16px;background:var(--cream);border:1px solid var(--cream3);border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s">'+p+'</button>';
