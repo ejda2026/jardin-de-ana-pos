@@ -942,10 +942,10 @@ body{
   .cajawrap{grid-template-columns:1fr;min-height:auto}
   .cpanel{height:auto;border-left:none;border-top:1px solid var(--cream3)}
   .ppanel{border-right:none}
-  .nav{height:auto;min-height:44px;flex-wrap:wrap;padding:6px 10px;gap:4px}
-  .brand{font-size:13px;margin-right:8px}
+  .nav{height:50px;flex-wrap:nowrap;padding:0 12px;gap:4px}
+  .brand{font-size:16px;margin-right:8px}
   .vnbtn{font-size:10px;padding:5px 9px}
-  .clock{width:100%;justify-content:center;padding:2px 0;order:10;font-size:10px}
+  .clock{width:auto;font-size:10px}
   .rtop{flex-direction:column;align-items:flex-start}
   .rbtns{width:100%}
   .adm-row{flex-direction:column}
@@ -1076,10 +1076,11 @@ body{
   .cpanel{height:auto;max-height:none}
   .ppanel{padding:10px}
   .pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important}
-  .nav{flex-wrap:wrap;height:auto;padding:5px 8px;gap:3px}
-  .brand{font-size:12px;margin-right:6px;width:100%;text-align:center;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .nav{flex-wrap:nowrap;height:44px;padding:0 8px;gap:4px}
+  .brand{font-size:15px;margin-right:0;flex:1;text-align:center;padding-bottom:0;border-bottom:none}
+  .sync-label{display:none}
+  .clock{width:auto;padding:0;font-size:10px;gap:4px}
   .vnbtn{font-size:9px;padding:5px 7px;flex:1;text-align:center;min-width:0}
-  .clock{width:100%;justify-content:center;padding:3px 0;order:10;font-size:9px}
   .rwrap{padding:8px}
   .rtop h2{font-size:15px}
   .rbtn{padding:6px 10px;font-size:10px}
