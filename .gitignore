@@ -1,0 +1,19 @@
+# Node / Firebase Functions
+node_modules/
+functions/node_modules/
+
+# Firebase debug logs
+firebase-debug.log
+firebase-debug.*.log
+*-debug.log
+.firebase/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Backups locales (no se suben — viven en ~/.firebase-keys/backups)
+*.backup.json

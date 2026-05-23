@@ -827,10 +827,11 @@ function notif(m){
   if(document.hidden && 'Notification' in window && Notification.permission === 'granted'){
     enviarNotificacionNativa('Orden Lista', {
       body: mesaNombre + ' lista para ' + meseroNombre,
-      icon: '/icon-192.png',
-      badge: '/badge-72.png',
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
       tag: 'orden-' + m,
       requireInteraction: true,
+      vibrate: [400, 100, 400, 100, 800, 200, 800],
       data: { mesa: m }
     });
   }

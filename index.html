@@ -1842,9 +1842,9 @@ window._loginConPin = function(rol){
   aplicarRol(rol);
   window.V(ROL_INICIO[rol]);
   if(rol === 'admin') purgarVentasAntiguas();
-  if(rol === 'admin' || rol === 'mesero') {
-    setTimeout(function(){ if(window._registrarPushToken) window._registrarPushToken(rol); }, 2000);
-  }
+  // Pedir permiso de notificaciones para todos los roles (no solo mesero/admin)
+  // En plan Spark no usamos FCM pero el permiso es necesario para mostrar notificaciones locales
+  setTimeout(function(){ if(window._registrarPushToken) window._registrarPushToken(rol); }, 2000);
   if(!_subsActivos){
     _subsActivos = true;
     if(_authListo){ iniciarSuscripciones(); }
@@ -2009,6 +2009,35 @@ _sub('ordenes', 'ordenes', function(snap) {
     // Notificar a cocina: nueva orden entrando
     if(rol === 'cocina' && nuevoStatus === 'en_cocina' && statusAnterior !== 'en_cocina') {
       beepCocina();
+      // Notificacion del sistema (con sonido del SO) si la app esta en segundo plano
+      if(document.hidden && 'Notification' in window && Notification.permission === 'granted' && typeof enviarNotificacionNativa === 'function'){
+        enviarNotificacionNativa('Nueva orden en cocina', {
+          body: gN(mesaNum) + ' acaba de enviar pedido',
+          icon: 'icon-192.png',
+          badge: 'icon-192.png',
+          tag: 'cocina-' + mesaNum,
+          requireInteraction: true,
+          vibrate: [300, 100, 300],
+          data: { mesa: mesaNum }
+        });
+      }
+    }
+
+    // Notificar a caja: mesa servida lista para cobrar
+    if(rol === 'caja' && nuevoStatus === 'en_caja' && statusAnterior !== 'en_caja') {
+      try { beep(); } catch(e) {}
+      try { if(navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e) {}
+      if(document.hidden && 'Notification' in window && Notification.permission === 'granted' && typeof enviarNotificacionNativa === 'function'){
+        enviarNotificacionNativa('Mesa lista para cobrar', {
+          body: gN(mesaNum) + ' pendiente de cobro',
+          icon: 'icon-192.png',
+          badge: 'icon-192.png',
+          tag: 'caja-' + mesaNum,
+          requireInteraction: true,
+          vibrate: [200, 100, 200],
+          data: { mesa: mesaNum }
+        });
+      }
     }
 
     _prevFbStatus[mesaNum] = nuevoStatus;
