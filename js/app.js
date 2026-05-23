@@ -5579,11 +5579,14 @@ document.addEventListener('click',function(){try{getAC().resume();}catch(e){}},{
 // CARGAR ESTADO AL INICIAR
 loadState();
 
-// Registrar service worker para PWA
+// Registrar service worker para PWA y notificaciones push de Firebase
 if('serviceWorker' in navigator && location.protocol === 'https:'){
-  navigator.serviceWorker.register('/sw.js').then(function(reg){
+  navigator.serviceWorker.register('firebase-messaging-sw.js').then(function(reg){
     window._swReg = reg;
-  }).catch(function(){});
+    console.log('[SW] Registrado correctamente');
+  }).catch(function(err){
+    console.warn('[SW] Error al registrar:', err);
+  });
 }
 
 // Detectar si está instalado como PWA
